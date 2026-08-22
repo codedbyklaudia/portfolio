@@ -1,0 +1,81 @@
+@use 'colors' as c;
+
+@mixin scaled-font($size) {
+  font-size: calc(#{$size} * var(--font-scale, 1));
+}
+
+@mixin mono-label($size: 11px, $tracking: 0.12em, $weight: null) {
+  font-family: var(--font-mono);
+  font-size: $size;
+  @if $weight {
+    font-weight: $weight;
+  }
+  letter-spacing: $tracking;
+  text-transform: uppercase;
+}
+
+@mixin eyebrow-kicker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--purple-mid);
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(0, 0, 0, 0.12);
+    margin-left: 2px;
+  }
+}
+
+@mixin eyebrow-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: rgba(107, 79, 160, 0.1);
+  border-radius: 50%;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+@mixin traffic-dot($color) {
+  border-radius: 50%;
+  background: $color;
+}
+
+// Frosted-glass panel 
+@mixin glass($bg: rgba(255, 255, 255, 0.6), $blur: 16px) {
+  background: $bg;
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+}
+
+@mixin pill-button($bg: var(--ink), $color: #fff) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: $color;
+  background: $bg;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@mixin app-gradient($from, $to) {
+  background: linear-gradient(180deg, $from, $to);
+}

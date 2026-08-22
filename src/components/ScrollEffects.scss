@@ -1,0 +1,101 @@
+@use '../styles' as *;
+
+/* PACMAN ROW */
+.pacman-row {
+  position: relative;
+  height: 48px;
+  margin: 48px 0;
+  overflow: visible;
+}
+
+.pac-dots {
+  position: absolute;
+  inset: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.pac-dot {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--pac-color, var(--orange));
+  top: 50%; transform: translateY(-50%) scale(1);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* Pacman character */
+.pacman {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px; height: 40px;
+  transition: left 0.05s linear;
+}
+
+.pac-body {
+  width: 40px; height: 40px;
+  background: var(--pac-bg, var(--bg));
+  border-radius: 50%;
+  position: relative;
+  overflow: hidden;
+}
+.pac-mouth-top {
+  position: absolute;
+  width: 100%; height: 50%;
+  background: var(--pac-color, var(--orange));
+  top: 0; left: 0;
+  transform-origin: bottom center;
+  animation: mouthTop 0.25s ease-in-out infinite alternate;
+}
+.pac-mouth-bottom {
+  position: absolute;
+  width: 100%; height: 50%;
+  background: var(--pac-color, var(--orange));
+  bottom: 0; left: 0;
+  transform-origin: top center;
+  animation: mouthBottom 0.25s ease-in-out infinite alternate;
+}
+
+@keyframes mouthTop {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-35deg); }
+}
+@keyframes mouthBottom {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(35deg); }
+}
+
+/* SLIDE IN */
+.slide-in {
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1),
+    transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.slide-left  { transform: translateX(-60px); }
+.slide-right { transform: translateX(60px); }
+.slide-up    { transform: translateY(40px); }
+
+.slide-visible {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* REVEAL BLOCK */
+.reveal-block {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.9s cubic-bezier(0.16,1,0.3,1),
+  transform 0.9s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* DRIFT TEXT */
+.drift-text {
+  will-change: transform;
+  display: inline-block;
+}

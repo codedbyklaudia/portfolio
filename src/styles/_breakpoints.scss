@@ -1,0 +1,9 @@
+$bp-xs: 520px; 
+$bp-sm: 768px; 
+$bp-md: 900px; 
+
+@mixin respond($breakpoint) {
+  @media (max-width: $breakpoint) {
+    @content;
+  }
+}

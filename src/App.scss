@@ -1,0 +1,44 @@
+@use './styles' as *;
+
+@import url('https://fonts.googleapis.com/css2?family=Geomini:wght@200..800&family=Merienda:wght@300..900&family=Outfit:wght@100..900&family=Poiret+One&family=Quicksand:wght@300..700&family=Sekuya&display=swap');
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg:         #{$bg};
+  --black:      #{$ink-warm};
+  --ink:        #{$ink}; 
+  --purple:     #{$purple};
+  --purple-mid: #{$purple-mid};
+  --accent-vivid: #{$accent-vivid};
+  --lavender:   #{$lavender};
+  --amethyst:   #{$amethyst};
+  --teal:       #{$teal};
+  --orange:     #{$orange};
+  --mid:        #{$mid};
+  --grey:       #{$grey};
+  --light-grey: #{$light-grey};
+  --text-h: #{$ink-warm};
+  //Fonts
+  --font-display: #{$font-display};
+  --font-body:    #{$font-body};
+  --font-decor:   #{$font-decor};
+  --font-mono:    #{$font-mono};
+}
+
+html, body, #root { height: 100%; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--black);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }

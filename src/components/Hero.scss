@@ -1,0 +1,1044 @@
+@use '../styles' as *;
+
+/* ── Section ── */
+.lh-section {
+  height: 400vh;
+  position: relative;
+  background: #1C1611;
+}
+
+.lh-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1C1611;
+  transition: background 0.1s;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.lh-sticky-content {
+  position: absolute;
+  inset: 0;
+  will-change: opacity, transform;
+}
+
+/* Animated blob background */
+.lh-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.lh-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(110px);
+  opacity: 0.12;
+  will-change: transform;
+}
+.lh-blob--1 {
+  width: 40vw; height: 40vw;
+  background: #4A3626;
+  top: -20%; left: -10%;
+  animation: blobDrift1 18s ease-in-out infinite;
+}
+.lh-blob--2 {
+  width: 32vw; height: 32vw;
+  background: #6B4A2A;
+  bottom: -15%; right: -8%;
+  animation: blobDrift2 22s ease-in-out infinite;
+}
+.lh-blob--3 {
+  width: 26vw; height: 26vw;
+  background: #3A2E1E;
+  top: 30%; right: 20%;
+  animation: blobDrift3 26s ease-in-out infinite;
+}
+.lh-blob--4 {
+  width: 20vw; height: 20vw;
+  background: #52371F;
+  bottom: 15%; left: 18%;
+  animation: blobDrift4 20s ease-in-out infinite;
+}
+
+@keyframes blobDrift1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(8vw, 6vh) scale(1.1); }
+  66%      { transform: translate(-4vw, 10vh) scale(0.95); }
+}
+@keyframes blobDrift2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  33%      { transform: translate(-10vw, -8vh) scale(1.08); }
+  66%      { transform: translate(5vw, -4vh) scale(0.92); }
+}
+@keyframes blobDrift3 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(-12vw, 8vh) scale(1.15); }
+}
+@keyframes blobDrift4 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%      { transform: translate(10vw, -10vh) scale(1.1); }
+}
+
+.lh-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+.lh-bg-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1s ease;
+  background: linear-gradient(160deg, #F5F8FB 0%, #ECEFF3 100%);
+}
+.lh-bg-wash--visible {
+  opacity: 1;
+}
+
+/* Menubar */
+.lh-menubar {
+  height: 26px;
+  @include glass(rgba(0,0,0,0.05), 14px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(0,0,0,0.7);
+}
+.lh-menubar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.lh-menu-logo { font-size: 12px; }
+.lh-menu-logo-img {
+  height: 13px;
+  width: auto;
+  max-width: 60px;
+  display: block;
+  object-fit: contain;
+}
+.lh-menu-item { opacity: 0.75; font-weight: 400; color: inherit; }
+.lh-menu-item--bold { opacity: 1; font-weight: 600; }
+.lh-menubar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.85;
+  color: rgba(0,0,0,0.7);
+}
+.lh-menu-icon {
+  width: 15px;
+  height: auto;
+  color: rgba(0,0,0,0.6);
+}
+
+/* Desktop area */
+.lh-desktop {
+  flex: 1;
+  position: relative;
+  padding: 24px;
+}
+
+.lh-folder-grid {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: grid;
+  grid-template-columns: repeat(2, 84px);
+  gap: 20px 16px;
+}
+
+.lh-mini-folder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  cursor: default;
+  padding: 6px 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.lh-mini-folder:hover { background: rgba(0,0,0,0.05); }
+.lh-mini-folder-svg {
+  width: 44px;
+  height: auto;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3));
+}
+.lh-mini-folder-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: rgba(0,0,0,0.7);
+  text-align: center;
+  text-shadow: none;
+  line-height: 1.2;
+  max-width: 84px;
+}
+
+/* ── Welcome window on screen ── */
+.lh-screen-hint {
+  position: absolute;
+  top: 46%;
+  left: 38%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(24px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35), 0 0 0 0.5px rgba(0,0,0,0.1);
+  will-change: opacity;
+  animation: winFloat 3s ease-in-out infinite;
+}
+@keyframes winFloat {
+  0%,100% { transform: translate(-50%, -50%) translateY(0); }
+  50%      { transform: translate(-50%, -50%) translateY(-6px); }
+}
+
+.lh-win-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(245,245,247,0.9);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.lh-win-dot { width: 11px; height: 11px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.1); }
+.lh-win-dot--r { @include traffic-dot($mac-red); }
+.lh-win-dot--y { @include traffic-dot($mac-yellow); }
+.lh-win-dot--g { @include traffic-dot($mac-green); }
+.lh-win-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(0,0,0,0.5);
+  margin-right: 40px;
+}
+
+.lh-win-body {
+  padding: 24px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.lh-win-hi { font-family: var(--font-display); font-size: 22px; color: var(--black); }
+.lh-win-sub {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 300;
+  color: rgba(26,16,32,0.55);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+.lh-win-cta {
+  @include mono-label(10px, 0.25em);
+  color: var(--orange);
+}
+
+.lh-mouse {
+  width: 22px; height: 34px;
+  border: 2px solid rgba(26,16,32,0.35);
+  border-radius: 12px;
+  position: relative;
+}
+.lh-mouse-wheel {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translateX(-50%);
+  width: 3px; height: 7px;
+  border-radius: 2px;
+  background: var(--orange);
+  animation: mouseWheel 1.6s ease-in-out infinite;
+}
+@keyframes mouseWheel {
+  0%   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+  70%  { transform: translateX(-50%) translateY(12px); opacity: 0; }
+  100% { transform: translateX(-50%) translateY(0);    opacity: 0; }
+}
+.lh-mouse--dark { border-color: rgba(26,16,32,0.3); }
+
+
+.lh-login-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  will-change: opacity, transform;
+  transform-origin: 50% 50%;
+  color: #fff;
+}
+
+/* Wallpaper — swap the background-image URL below for a real photo
+   (e.g. /images/login-wallpaper.jpg) once you've got one; the
+   gradient + blobs are just a placeholder so this doesn't depend on
+   an asset to ship. A dark overlay sits on top either way so the
+   white text/menu-bar stays legible over a busy photo. */
+.lh-login-wallpaper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  // background:
+  //   linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.4) 100%),
+  //   radial-gradient(120% 90% at 20% 15%, #3A2B1E 0%, transparent 60%),
+  //   radial-gradient(120% 90% at 80% 85%, #2E3B4A 0%, transparent 60%),
+    // linear-gradient(160deg, #23180F 0%, #1C1611 55%, #120D08 100%);
+  // Uncomment and point at a real photo to replace the gradient wallpaper:
+  background-image:
+    linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.4) 100%),
+    url('/images/background.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.lh-login-wallpaper-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(140px);
+  opacity: 0.22;
+  will-change: transform;
+}
+.lh-login-wallpaper-blob--1 {
+  width: 46vw; height: 46vw;
+  background: #B5723F;
+  top: -12%; left: -8%;
+  animation: blobDrift1 20s ease-in-out infinite;
+}
+.lh-login-wallpaper-blob--2 {
+  width: 38vw; height: 38vw;
+  background: #4A7FB5;
+  bottom: -14%; right: -6%;
+  animation: blobDrift2 24s ease-in-out infinite;
+}
+.lh-login-wallpaper-blob--3 {
+  width: 26vw; height: 26vw;
+  background: #6B4A2A;
+  top: 34%; right: 22%;
+  animation: blobDrift3 26s ease-in-out infinite;
+}
+
+/* Top status bar — purely decorative, echoes the real macOS
+   lock-screen menu bar (input source / battery / power) rather than
+   any of the site's own navigation. */
+.lh-login-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+.lh-login-topbar-left { flex: 1; }
+.lh-login-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.lh-login-topbar-item {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.85);
+}
+.lh-login-topbar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  line-height: 1;
+}
+.lh-login-topbar-icon--battery {
+  width: 22px;
+  height: 11px;
+  border: 1.3px solid rgba(255,255,255,0.75);
+  border-radius: 3px;
+  padding: 1.5px;
+  position: relative;
+}
+.lh-login-topbar-icon--battery::after {
+  // battery nub
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 4px;
+  background: rgba(255,255,255,0.75);
+  border-radius: 0 1px 1px 0;
+}
+.lh-login-battery-fill {
+  display: block;
+  width: 78%;
+  height: 100%;
+  background: rgba(255,255,255,0.85);
+  border-radius: 1px;
+}
+.lh-login-topbar-icon--power {
+  font-size: 14px;
+}
+
+.lh-login-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  padding: 56px 24px 48px;
+}
+
+/* Date + time group — pinned to the very top of the screen (just
+   below the status bar), rather than vertically centered. */
+.lh-login-topgroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lh-login-date {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: clamp(15px, 1.6vw, 20px);
+  color: rgba(255,255,255,0.85);
+}
+
+.lh-login-time {
+  font-family: var(--font-body);
+  font-weight: 200;
+  font-size: clamp(64px, 11vw, 140px);
+  line-height: 1;
+  color: #fff;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 30px rgba(0,0,0,0.35);
+}
+
+/* Avatar + name + login field group — pinned to the very bottom of
+   the screen instead of sitting mid-page. */
+.lh-login-user {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.lh-login-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:  #ffffff;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.14);
+  margin-bottom: 4px;
+}
+.lh-login-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lh-login-name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+/* "Scroll to explore" pill — replaces the earlier decorative password
+   field, which read as an actual login prompt and confused people.
+   Clicking it (or the arrow) just nudges the page into the scroll
+   reveal (see handleLoginSubmit in Hero.jsx); nothing is validated. */
+.lh-login-scroll-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.3);
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: rgba(255,255,255,0.85);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.lh-login-scroll-pill:hover {
+  background: rgba(0,0,0,0.35);
+  border-color: rgba(255,255,255,0.5);
+  transform: translateY(-1px);
+}
+.lh-login-scroll-pill-arrow {
+  font-size: 13px;
+  line-height: 1;
+  animation: lhScrollHintBounce 1.6s ease-in-out infinite;
+}
+
+/* ── Text animation classes ── */
+.lh-anim {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1),
+              transform 0.7s cubic-bezier(0.16,1,0.3,1);
+}
+.lh-final--visible .lh-anim--1 { opacity:1; transform:none; transition-delay: 0.0s; }
+.lh-final--visible .lh-anim--2 { opacity:1; transform:none; transition-delay: 0.12s; }
+.lh-final--visible .lh-anim--3 { opacity:1; transform:none; transition-delay: 0.22s; }
+.lh-final--visible .lh-anim--4 { opacity:1; transform:none; transition-delay: 0.34s; }
+.lh-final--visible .lh-anim--5 { opacity:1; transform:none; transition-delay: 0.48s; }
+
+/* Final overlay */
+.lh-final {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lh-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  @include mono-label(11px, 0.2em);
+  color: rgba(26,16,32,0.45);
+  margin-bottom: 20px;
+  justify-content: center;
+}
+.lh-dot {
+  width: 7px; height: 7px;
+  @include traffic-dot($mac-green);
+  animation: lhPulse 2.5s ease-in-out infinite;
+}
+@keyframes lhPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(40,200,64,0.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(40,200,64,0); }
+}
+
+.lh-reveal-scene {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Top-left widget group — clock/weather/language switcher ── */
+.lh-reveal-topleft {
+  position: absolute;
+  top: 96px;
+  left: 72px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  pointer-events: auto;
+}
+
+.lh-reveal-center {
+  position: absolute;
+  top: 50%;
+  left: 38%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── Widget grid — enlarged: 130px → 158px columns, more internal
+   padding/gaps so the bigger clock face and text don't feel cramped. */
+.lh-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 158px);
+  gap: 16px;
+}
+
+.lh-widget-card {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Clock widget — enlarged from 64px. ── */
+.lh-clock-face {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+}
+.lh-clock-ring {
+  fill: rgba(255,255,255,0.5);
+  stroke: rgba(0,0,0,0.15);
+  stroke-width: 1.5;
+}
+.lh-clock-tick {
+  stroke: rgba(0,0,0,0.35);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.lh-clock-hand {
+  stroke-linecap: round;
+}
+.lh-clock-hand--hour { stroke: var(--black); stroke-width: 3.5; }
+.lh-clock-hand--min  { stroke: var(--black); stroke-width: 2.5; }
+.lh-clock-hand--sec  { stroke: #4A7FB5; stroke-width: 1.2; }
+.lh-clock-pivot { fill: var(--black); }
+
+.lh-widget-time {
+  font-family: var(--font-body);
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--black);
+  line-height: 1;
+}
+.lh-widget-date {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: rgba(0,0,0,0.5);
+  margin-top: 5px;
+  text-align: center;
+}
+
+/* ── Weather widget — real Open-Meteo fetch now (see Hero.jsx's
+   `weather` state), London coordinates, no API key needed. Enlarged
+   to match the clock card. ── */
+.lh-widget-card--weather {
+  background: linear-gradient(160deg, #6FB7E8 0%, #4A7FB5 100%);
+  justify-content: center;
+  gap: 5px;
+}
+.lh-widget-weather-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+.lh-widget-weather-condition {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  margin-top: 5px;
+}
+.lh-widget-weather-city {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+}
+
+/* ── Language switcher — sized down: 78×52 → 58×40, tighter gap/
+   padding, smaller flag/text, so it doesn't visually compete with the
+   now-bigger clock/weather cards above it. ── */
+.lh-lang-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.lh-lang-btn {
+  width: 58px;
+  height: 40px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  padding: 0 7px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 11px;
+
+  background: rgba(255, 255, 255, 0.55);
+
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+  cursor: pointer;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: #555;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lh-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.lh-lang-btn--active {
+  background: #4a7fb5;
+  color: #fff;
+  border-color: #4a7fb5;
+
+  box-shadow:
+    0 5px 12px rgba(74, 127, 181, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.lh-lang-btn--active:hover {
+  background: #4a7fb5;
+  color: #fff;
+}
+
+.lh-lang-flag {
+  width: 22px;
+  height: 15px;
+
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+
+  border-radius: 3px;
+
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.lh-lang-btn span {
+  line-height: 1;
+}
+
+.lh-topleft-bio {
+  margin: 0;
+  max-width: 220px;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.4;
+  color: rgba(0,0,0,0.6);
+}
+
+.lh-lang-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.lh-lang-wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -20vh;
+  height: 140vh;
+  border-radius: 50% 50% 0 0 / 120px 120px 0 0;
+  transform: translateY(100%);
+  animation-name: lhLangWipe;
+  animation-duration: 3.2s;
+  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
+  animation-fill-mode: forwards;
+}
+
+.lh-lang-wave--1 {
+  background: linear-gradient(135deg, #A8C3A0 0%, #6F9468 100%);
+  animation-delay: 0s;
+}
+.lh-lang-wave--2 {
+  background: linear-gradient(135deg, #C9B8D4 0%, #8F76A8 100%);
+  animation-delay: 0.24s;
+}
+.lh-lang-wave--3 {
+  background: linear-gradient(135deg, #E3C9A0 0%, #A67F52 100%);
+  animation-delay: 0.48s;
+}
+
+@keyframes lhLangWipe {
+  0%   { transform: translateY(100%); }
+  42%  { transform: translateY(0%); }
+  58%  { transform: translateY(0%); }
+  100% { transform: translateY(-100%); }
+}
+
+.lh-lang-overlay-text {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-weight: 700;
+  font-size: clamp(36px, 6vw, 72px);
+  color: #fff;
+  opacity: 0;
+  animation-name: lhLangTextFade;
+  animation-duration: 3.2s;
+  animation-timing-function: ease;
+  animation-delay: 0.48s;
+  animation-fill-mode: both;
+}
+@keyframes lhLangTextFade {
+  0%, 48%   { opacity: 0; transform: translateY(10px); }
+  52%, 57%  { opacity: 1; transform: translateY(0); }
+  61%, 100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.lh-reveal-quote {
+  margin: 0;
+  max-width: 520px;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-size: clamp(28px, 3.4vw, 42px);
+  line-height: 1.5;
+  color: rgba(0,0,0,0.6);
+}
+
+.lh-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.8s ease 0.6s;
+}
+.lh-scroll-hint--visible {
+  opacity: 0.6;
+}
+.lh-scroll-hint-arrow {
+  font-size: 15px;
+  color: rgba(0,0,0,0.5);
+  animation: lhScrollHintBounce 1.6s ease-in-out infinite;
+}
+.lh-scroll-hint-text {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.4);
+}
+@keyframes lhScrollHintBounce {
+  0%,100% { transform: translateY(0); }
+  50%     { transform: translateY(6px); }
+}
+
+.lh-reveal-folders {
+  position: absolute;
+  top: 50%;
+  right: 72px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.lh-reveal-folder-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.lh-reveal-folder-btn:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+.lh-reveal-folder-icon-mirror {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+.lh-reveal-folder-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--black);
+  letter-spacing: -0.01em;
+}
+
+/* ── macOS Dock (persistent, outside the 3D scene) ── */
+.lh-dock, .lh-hero-dock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  @include glass(rgba(255,255,255,0.18), 20px);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 16px;
+  padding: 7px 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+}
+.lh-hero-dock {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.lh-dock-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  cursor: default;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.lh-dock-icon svg { width: 28px; height: 28px; }
+.lh-dock-icon:hover { transform: scale(1.28) translateY(-6px); }
+
+.lh-dock-icon--finder   { @include app-gradient(#4CA3F5, #1B6FE0); }
+.lh-dock-icon--safari   { @include app-gradient(#fff, #fff); }
+.lh-dock-icon--mail     { @include app-gradient(#56AFFF, #1A6BEF); }
+.lh-dock-icon--photos   { @include app-gradient(#FDFDFD, #E8E8EC); }
+.lh-dock-icon--notes    { @include app-gradient(#FFF, #FFF); }
+.lh-dock-icon--calendar { @include app-gradient(#FFF, #FFF); }
+.lh-dock-icon--settings { @include app-gradient(#D5D8DD, #A8ADB6); }
+.lh-dock-icon--terminal { @include app-gradient(#3E3E46, #1A1A20); }
+.lh-dock-icon--trash    { @include app-gradient(#C9CDD4, #9AA0AA); }
+
+.lh-dock-sep {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.28);
+  margin: 0 3px;
+}
+
+@include respond($bp-sm) {
+  .lh-reveal-scene { display: flex; align-items: center; justify-content: center; height: auto; padding: 0 24px; }
+  .lh-reveal-topleft { display: none; }
+  .lh-reveal-center { display: none; }
+  .lh-reveal-folders { position: static; transform: none; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 20px; }
+  .lh-folder-grid { grid-template-columns: repeat(2, 64px); gap: 12px 10px; top: 12px; right: 12px; }
+  .lh-mini-folder-svg { width: 32px; }
+  .lh-mini-folder-label { font-size: 7px; }
+  .lh-screen-hint { width: 230px; }
+  .lh-win-body    { padding: 16px 16px 14px; }
+  .lh-dock, .lh-hero-dock { display: none; }
+  .lh-screen-dock { display: none; }
+}
+
+/* ── Screen DOM (legacy in-3D screen content, kept for the Projects
+   dive-through and any other places still using it) ── */
+.lh-screen-dom--in3d {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: scale(0.965) !important;
+  transform-origin: 50% 50%;
+  width: 900px !important;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 9px 9px 3px 3px;
+  background: #F7F7F7;
+  display: flex;
+  flex-direction: column;
+  will-change: opacity;
+}
+
+.lh-screen-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: inset 0 0 26px rgba(0,0,0,0.1);
+  border-radius: inherit;
+}
+
+.lh-screen-dock {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  @include glass(rgba(255,255,255,0.18), 16px);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 12px;
+  padding: 5px 9px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+.lh-screen-dock-icon {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.lh-screen-dock-icon svg { width: 20px; height: 20px; }
+
+.lh-screen-dock-icon--finder   { @include app-gradient(#4CA3F5, #1B6FE0); }
+.lh-screen-dock-icon--safari   { @include app-gradient(#3EB9F5, #1668E3); }
+.lh-screen-dock-icon--mail     { @include app-gradient(#56AFFF, #1A6BEF); }
+.lh-screen-dock-icon--photos   { @include app-gradient(#FDFDFD, #E8E8EC); }
+.lh-screen-dock-icon--terminal { @include app-gradient(#3E3E46, #1A1A20); }
+.lh-screen-dock-icon--trash    { @include app-gradient(#C9CDD4, #9AA0AA); }
+
+.lh-screen-dock-sep {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.28);
+  margin: 0 2px;
+}

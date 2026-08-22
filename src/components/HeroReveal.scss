@@ -1,0 +1,74 @@
+@use '../styles' as *;
+
+/* Flash */
+.hr-flash {
+  position: fixed; inset: 0;
+  background: #fff; z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.06s ease;
+}
+
+/* 3D Camera canvas */
+.hr-camera-canvas {
+  width: 300px;
+  height: 300px;
+}
+
+/* Polaroids */
+.hr-polaroid {
+  width: 200px;
+  pointer-events: none;
+  animation: polaroidDrop 0.55s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes polaroidDrop {
+  from { opacity: 0; transform: translateY(-20px) scale(0.93); }
+  to   { opacity: 1; }
+}
+
+.hr-polaroid-inner {
+  background: #fff;
+  padding: 10px 10px 0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 16px 48px rgba(0,0,0,0.13);
+}
+
+.hr-polaroid-img {
+  width: 180px; height: 228px;
+  object-fit: cover; object-position: center top;
+  display: block;
+  filter: saturate(0) brightness(1.9) contrast(0.8);
+  transition: filter 1.8s cubic-bezier(0.4,0,0.2,1);
+}
+.hr-develop {
+  filter: saturate(1) brightness(1) contrast(1);
+}
+
+.hr-polaroid-caption {
+  background: #fff;
+  text-align: center;
+  padding: 10px 10px 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(0,0,0,0.38);
+  letter-spacing: 0.04em;
+  margin-top: -1px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 16px 48px rgba(0,0,0,0.13);
+}
+
+/* Scroll hint */
+.hr-hint {
+  position: fixed; bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  pointer-events: none; z-index: 30;
+  animation: hintFloat 2s ease-in-out infinite;
+}
+.hr-hint span:first-child {
+  @include mono-label(10px, 0.3em);
+  color: rgba(26,16,32,0.4);
+}
+.hr-hint-arrow { font-size: 18px; color: var(--orange); }
+@keyframes hintFloat {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(8px); }
+}
