@@ -1,141 +1,215 @@
+import 'dotenv/config';
+import path from 'node:path';
 import express from 'express';
 import cors from 'cors';
-import { Resend } from 'resend';
-import 'dotenv/config';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import nodemailer from 'nodemailer';
 
-// Standalone contact-form API — deploy this wherever you run the
-// BarkBuddy backend (Render, etc). Keep it separate from the static
-// frontend on FastPanda: the RESEND_API_KEY must never reach the
-// browser, so this has to run server-side regardless of where the
-// static site itself is hosted.
+const {
+  PORT = 3001,
+  MAIL_TO = 'hello@codedbyklaudia.co.uk',
+  CORS_ORIGIN = 'http://localhost:5173',
+  MAIL_DRY_RUN,
+  // Resend (preferred)
+  RESEND_API_KEY,
+  RESEND_FROM_EMAIL,
+  // SMTP (fallback if there is no Resend key)
+  MAIL_FROM,
+  SMTP_HOST,
+  SMTP_PORT = '587',
+  SMTP_USER,
+  SMTP_PASS,
+} = process.env;
 
-const app = express();
+const RESEND_URL = process.env.RESEND_API_URL || 'https://api.resend.com/emails';
+const dryRun = MAIL_DRY_RUN === 'true';
+const smtpConfigured = Boolean(SMTP_HOST && SMTP_USER && SMTP_PASS);
 
-// CORS_ORIGIN should be your deployed frontend's exact origin in
-// production (e.g. https://codedbyklaudia.co.uk) — '*' only for local
-// dev, since a public API that accepts requests from anywhere is an
-// open invitation for abuse of your Resend quota.
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
-app.use(express.json({ limit: '6mb' })); // small headroom over a ~5MB attachment once base64-encoded
+// ── How emails get sent ─────────────────────────────────────
+let smtp = null;
+if (dryRun) {
+  console.log('Dry run: emails are printed here, not sent.');
+} else if (RESEND_API_KEY) {
+  console.log(`Sending with Resend, from ${RESEND_FROM_EMAIL || '(RESEND_FROM_EMAIL is not set)'}`);
+  if (!RESEND_FROM_EMAIL) console.warn('Set RESEND_FROM_EMAIL, for example: CodedByKlaudia <hello@codedbyklaudia.co.uk>');
+} else if (smtpConfigured) {
+  smtp = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT),
+    secure: Number(SMTP_PORT) === 465, // 465 = SSL, 587 = STARTTLS
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  });
+  smtp
+    .verify()
+    .then(() => console.log('SMTP connection OK'))
+    .catch((err) => console.warn('SMTP connection failed:', err.message));
+} else {
+  console.warn('No email provider configured. Set RESEND_API_KEY (or the SMTP_* values) in .env.');
+}
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Sends one email through whichever provider is configured. Throws on failure.
+async function deliver({ subject, text, html, replyTo, file }) {
+  if (dryRun) {
+    console.log(JSON.stringify({ to: MAIL_TO, replyTo, subject, text, attachment: file?.filename ?? null }, null, 2));
+    return;
+  }
 
-const TO_EMAIL = 'hello@codedbyklaudia.co.uk';
-// Resend requires the "from" address to be on a domain you've
-// verified with them — using your own inbox as the from-address only
-// works once codedbyklaudia.co.uk is verified in the Resend
-// dashboard. Until then, Resend's own onboarding@resend.dev sender
-// works for testing.
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'CodedByKlaudia <hello@codedbyklaudia.co.uk>';
+  if (RESEND_API_KEY) {
+    if (!RESEND_FROM_EMAIL) throw new Error('RESEND_FROM_EMAIL is not set');
+    const res = await fetch(RESEND_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM_EMAIL,
+        to: [MAIL_TO],
+        reply_to: replyTo,
+        subject,
+        text,
+        html,
+        attachments: file
+          ? [{ filename: file.filename, content: file.content.toString('base64') }]
+          : undefined,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(`Resend ${res.status}: ${body.message || 'request failed'}`);
+    }
+    return;
+  }
 
+  if (smtp) {
+    await smtp.sendMail({
+      from: MAIL_FROM || SMTP_USER,
+      to: MAIL_TO,
+      replyTo,
+      subject,
+      text,
+      html,
+      attachments: file ? [file] : [],
+    });
+    return;
+  }
+
+  throw new Error('No email provider configured');
+}
+
+// ── Validation helpers ──────────────────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MIN_MESSAGE_LEN = 10;
 const MAX_MESSAGE_LEN = 5000;
-const MAX_SUBJECT_LEN = 200;
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const BLOCKED_EXTENSIONS = new Set([
+  '.exe', '.bat', '.cmd', '.com', '.scr', '.msi', '.js', '.jar',
+  '.vbs', '.ps1', '.sh', '.app', '.dmg', '.apk', '.lnk',
+]);
 
-function escapeHtml(str = '') {
-  return String(str)
+// Single-line text: no line breaks (blocks email header injection)
+const oneLine = (value, max) =>
+  String(value ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, max);
+
+const escapeHtml = (value) =>
+  value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/"/g, '&quot;');
+
+// Turns the browser's data URL into an attachment, or throws a readable error
+function parseAttachment(attachment) {
+  if (!attachment) return null;
+
+  const match = /^data:([^;]*);base64,(.+)$/s.exec(String(attachment.base64 ?? ''));
+  if (!match) throw new Error('The attachment could not be read.');
+
+  const content = Buffer.from(match[2], 'base64');
+  if (content.length > MAX_ATTACHMENT_BYTES) throw new Error('The attachment is too large (5MB max).');
+
+  const filename =
+    path.basename(String(attachment.name || 'attachment')).replace(/[^\w.\- ()]/g, '_').slice(0, 100) ||
+    'attachment';
+  if (BLOCKED_EXTENSIONS.has(path.extname(filename).toLowerCase())) {
+    throw new Error('That file type is not allowed.');
+  }
+
+  return { filename, content, contentType: match[1] || undefined };
 }
 
-// Same shape of checks as the frontend, run again here — client-side
-// validation is only ever a UX convenience, never a security
-// boundary, since anyone can bypass it and hit this endpoint directly.
-function validate({ from, subject, message }) {
-  if (!from || typeof from !== 'string' || !EMAIL_RE.test(from.trim())) {
-    return 'A valid email address is required.';
-  }
-  if (!subject || typeof subject !== 'string' || !subject.trim()) {
-    return 'Subject is required.';
-  }
-  if (subject.length > MAX_SUBJECT_LEN) {
-    return 'Subject is too long.';
-  }
-  if (!message || typeof message !== 'string' || message.trim().length < 10) {
-    return 'Message is too short.';
-  }
-  if (message.length > MAX_MESSAGE_LEN) {
-    return 'Message is too long.';
-  }
-  return null;
-}
+// ── App ─────────────────────────────────────────────────────
+const app = express();
+app.set('trust proxy', 1); // correct visitor IPs behind Render, Railway, etc.
+app.use(helmet());
+app.use(
+  cors({
+    origin: CORS_ORIGIN.split(',').map((o) => o.trim()),
+    methods: ['GET', 'POST'],
+  })
+);
+app.use(express.json({ limit: '8mb' })); // 5MB file is ~6.7MB as base64
 
-app.post('/api/contact', async (req, res) => {
+app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5, // successful sends per visitor per window
+  skipFailedRequests: true, // typos and validation errors don't use up the limit
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages. Please try again in a few minutes.' },
+});
+
+app.post('/api/contact', contactLimiter, async (req, res) => {
+  const from = oneLine(req.body?.from, 254);
+  const subject = oneLine(req.body?.subject, 150);
+  const message = String(req.body?.message ?? '').trim();
+
+  if (!EMAIL_RE.test(from)) return res.status(400).json({ error: 'Please enter a valid email address.' });
+  if (!subject) return res.status(400).json({ error: 'Please add a subject.' });
+  if (message.length < MIN_MESSAGE_LEN) return res.status(400).json({ error: 'Your message is too short.' });
+  if (message.length > MAX_MESSAGE_LEN) return res.status(400).json({ error: 'Your message is too long.' });
+
+  let file;
   try {
-    const { from, subject, message, attachment } = req.body || {};
-
-    const validationError = validate({ from, subject, message });
-    if (validationError) {
-      return res.status(400).json({ error: validationError });
-    }
-
-    const cleanFrom = from.trim();
-    const cleanSubject = subject.trim();
-    const cleanMessage = message.trim();
-
-    // attachment (if present) is { name, type, base64 } from the
-    // frontend, where base64 is a full data URL — Resend wants just
-    // the base64 payload, not the "data:...;base64," prefix.
-    const attachments = [];
-    if (attachment?.base64 && attachment?.name) {
-      const base64Content = String(attachment.base64).split(',').pop();
-      // Basic sanity cap so someone can't smuggle a huge payload past
-      // the frontend's own file-size check.
-      if (base64Content && base64Content.length < 6_000_000) {
-        attachments.push({ filename: attachment.name, content: base64Content });
-      }
-    }
-
-    // 1. Notify Klaudia. reply-to is the visitor's own address, so
-    //    hitting "Reply" in her inbox goes straight back to them —
-    //    exactly the "answer the user straight away" behaviour asked
-    //    for.
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: TO_EMAIL,
-      replyTo: cleanFrom,
-      subject: `New message from your site: ${cleanSubject}`,
-      attachments,
-      html: `
-        <div style="font-family: -apple-system, sans-serif; line-height: 1.6; color: #1A1428;">
-          <p><strong>From:</strong> ${escapeHtml(cleanFrom)}</p>
-          <p><strong>Subject:</strong> ${escapeHtml(cleanSubject)}</p>
-          <p><strong>Message:</strong></p>
-          <p style="white-space: pre-wrap; background: #F5F3FA; padding: 16px; border-radius: 8px;">${escapeHtml(cleanMessage)}</p>
-        </div>
-      `,
-    });
-
-    // 2. Confirmation to the visitor.
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: cleanFrom,
-      subject: `Got your message — I'll be in touch soon!`,
-      html: `
-        <div style="font-family: -apple-system, sans-serif; line-height: 1.6; color: #1A1428;">
-          <p>Hey there,</p>
-          <p>Thanks for reaching out — I've received your message and will get back to you as soon as I can.</p>
-          <p>Here's a copy of what you sent, for your records:</p>
-          <blockquote style="border-left: 3px solid #7C3AED; margin: 16px 0; padding-left: 14px; color: #4b4560;">
-            <strong>${escapeHtml(cleanSubject)}</strong><br/>
-            <span style="white-space: pre-wrap;">${escapeHtml(cleanMessage)}</span>
-          </blockquote>
-          <p>Talk soon,<br/>Klaudia 🐾</p>
-        </div>
-      `,
-    });
-
-    res.json({ ok: true });
+    file = parseAttachment(req.body?.attachment);
   } catch (err) {
-    console.error('Contact form error:', err);
-    res.status(500).json({
-      error: "Something went wrong sending your message. Please try again, or email hello@codedbyklaudia.co.uk directly.",
+    return res.status(400).json({ error: err.message });
+  }
+
+  try {
+    await deliver({
+      subject: `[Portfolio] ${subject}`,
+      replyTo: from, // Reply goes straight to the visitor
+      text: `${message}\n\n--\nFrom: ${from}`,
+      html: `
+        <div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;color:#1d1a18">
+          <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
+          <hr style="border:none;border-top:1px solid #ddd;margin:24px 0" />
+          <p style="color:#666">From: <a href="mailto:${escapeHtml(from)}">${escapeHtml(from)}</a></p>
+        </div>`,
+      file,
     });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('Send failed:', err.message);
+    // No `error` text: the website then shows its own translated message
+    return res.status(500).json({ ok: false });
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Contact API listening on :${PORT}`));
+// Oversized or malformed requests
+app.use((err, _req, res, _next) => {
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'That file is too large (5MB max).' });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'Invalid request.' });
+  }
+  console.error(err);
+  return res.status(500).json({ ok: false });
+});
+
+app.listen(PORT, () => console.log(`Contact API listening on port ${PORT}`));

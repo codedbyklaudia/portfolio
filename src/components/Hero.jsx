@@ -1,16 +1,41 @@
 import { useEffect, useRef, useState } from 'react';
 import Folder from './Folder';
+import Draggable from './Draggable';
+import SkillsWindow from './SkillsWindow';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import './Hero.scss';
 
 const NAV_FOLDERS = [
   { folderKey: 'projects', scrollTo: 'projects-folder', color: '#4A7FB5', key: 'nav.projects' },
   { folderKey: 'about',    scrollTo: 'about',            color: '#4A7FB5', key: 'nav.aboutMe' },
-  { folderKey: 'skills',   scrollTo: 'about-notes', presetTab: 'skills', color: '#4A7FB5', key: 'nav.superpowers' },
   { folderKey: 'contact',  scrollTo: 'contact',           color: '#4A7FB5', key: 'nav.contact' },
 ];
 
 const FOLDER_SIZE = 0.9;
+
+// Put your CV in public/cv/ and update the file name here
+const CV_URL = '/cv/Klaudia_Kulawik_CV.pdf';
+const CV_FILENAME = 'Klaudia_Kulawik_CV.pdf';
+
+// Document icon for the CV file on the desktop
+function CvIcon() {
+  return (
+    <svg className="lh-reveal-file-icon" viewBox="0 0 64 80" aria-hidden="true">
+      <path
+        d="M6 6a6 6 0 0 1 6-6h28l18 18v56a6 6 0 0 1-6 6H12a6 6 0 0 1-6-6z"
+        fill="#fff"
+        stroke="rgba(0,0,0,0.14)"
+        strokeWidth="1"
+      />
+      <path d="M40 0v12a6 6 0 0 0 6 6h12z" fill="#dce4ef" />
+      <rect x="14" y="28" width="30" height="3" rx="1.5" fill="#cfd6e0" />
+      <rect x="14" y="36" width="36" height="3" rx="1.5" fill="#cfd6e0" />
+      <rect x="14" y="44" width="24" height="3" rx="1.5" fill="#cfd6e0" />
+      <rect x="10" y="56" width="30" height="14" rx="3" fill="#4A7FB5" />
+      <text x="25" y="66.5" textAnchor="middle" fontSize="9" fontWeight="700" fill="#fff" fontFamily="Helvetica, Arial, sans-serif">PDF</text>
+    </svg>
+  );
+}
 
 export default function Hero() {
   const sectionRef        = useRef(null);
@@ -26,6 +51,13 @@ export default function Hero() {
   const LANGUAGE_FLAGS = Object.fromEntries(
     LANGUAGES.map(l => [l.code, l.flag])
   );
+
+  // Translation with an English fallback, so the dictionary entry
+  // works before the keys exist in every language file.
+  const tr = (key, fallback) => {
+    const value = t(key);
+    return !value || value === key ? fallback : value;
+  };
 
   const [langTransition, setLangTransition] = useState(null);
 
@@ -73,6 +105,12 @@ export default function Hero() {
   // Per-nav-folder open state — keyed by folderKey now, not the (no
   // longer always-unique) scroll target.
   const [openNavFolders, setOpenNavFolders] = useState({});
+
+  // Toolbox (skills) window
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  useEffect(() => {
+    if (!revealed) setSkillsOpen(false);
+  }, [revealed]);
 
   const openSection = (id) => {
     const el = document.getElementById(id);
@@ -266,6 +304,23 @@ export default function Hero() {
                 <div className="lh-login-time">{widgetTime}</div>
               </div>
 
+              {/* Dictionary entry — fills the middle of the lock screen */}
+              <div className="lh-login-entry">
+                <h2 className="lh-login-headword">
+                  {tr('hero.dictWord', 'software developer')}
+                </h2>
+                <p className="lh-login-pron">
+                  <span>{tr('hero.dictPron', '/ˈsɒft.weə dɪˈvel.ə.pər/')}</span>
+                  <em>{tr('hero.dictPos', 'noun')}</em>
+                </p>
+                <p className="lh-login-def">
+                  {tr(
+                    'hero.dictDef',
+                    'a digital wizard who turns caffeine into code, transforms bugs into features, and sometimes speaks in a secret language only computers understand. They make your apps work like magic… most of the time.'
+                  )}
+                </p>
+              </div>
+
               <div className="lh-login-user">
                 <div className="lh-login-avatar">
                   <img src="/images/codedbyklaudia_logo_1.png" alt="CodedByKlaudia logo" />
@@ -287,16 +342,11 @@ export default function Hero() {
           <div className={`lh-final ${revealed ? 'lh-final--visible' : ''}`}>
             <div className="lh-reveal-scene">
 
-              {/* Top-left widget group — real analog clock (live,
-                  locale-aware via clockLocale above), and a live
-                  Weather card (real Open-Meteo fetch — see the
-                  `weather` state above — shows actual temperature +
-                  condition emoji for London, not asserted data), and
-                  a language switcher. */}
+              {/* Top-left widget group */}
               <div className="lh-reveal-topleft lh-anim lh-anim--1">
 
                 <div className="lh-widget-grid">
-                  <div className="lh-widget-card lh-widget-card--clock">
+                  <Draggable id="widget-clock" className="lh-widget-card lh-widget-card--clock">
                     <svg className="lh-clock-face" viewBox="0 0 100 100" aria-hidden="true">
                       <circle cx="50" cy="50" r="47" className="lh-clock-ring" />
                       {Array.from({ length: 12 }).map((_, i) => (
@@ -320,13 +370,13 @@ export default function Hero() {
                     </svg>
                     <div className="lh-widget-time">{widgetTime}</div>
                     <div className="lh-widget-date">{widgetDate}</div>
-                  </div>
+                  </Draggable>
 
-                  <div className="lh-widget-card lh-widget-card--weather">
+                  <Draggable id="widget-weather" className="lh-widget-card lh-widget-card--weather">
                     <span className="lh-widget-weather-icon" aria-hidden="true">{weather?.emoji || '☀️'}</span>
                     <div className="lh-widget-weather-condition">{weather ? `${weather.tempC}°C` : '--'}</div>
                     <div className="lh-widget-weather-city">{t('hero.location')}</div>
-                  </div>
+                  </Draggable>
                 </div>
 
                 <div className="lh-lang-switcher" role="group" aria-label="Language">
@@ -375,20 +425,55 @@ export default function Hero() {
                   other whenever a nav-folder click caused real scroll
                   movement. */}
               <div className="lh-reveal-folders lh-anim lh-anim--2" ref={navFoldersRef}>
-                {NAV_FOLDERS.map((f) => (
-                  <button
-                    key={f.folderKey}
+
+                {/* Extra desktop items: Toolbox folder + CV file */}
+                <div className="lh-reveal-col lh-reveal-col--extra">
+                  <Draggable
+                    as="button"
                     type="button"
+                    id="folder-toolbox"
                     className="lh-reveal-folder-btn"
-                    onClick={() => handleNavFolderClick(f)}
-                    aria-label={`Open ${t(f.key)}`}
+                    onClick={() => setSkillsOpen((open) => !open)}
+                    aria-label={tr('hero.toolbox', 'Toolbox')}
                   >
                     <span className="lh-reveal-folder-icon-mirror">
-                      <Folder color={f.color} size={FOLDER_SIZE} open={!!openNavFolders[f.folderKey]} />
+                      <Folder color="#4A7FB5" size={FOLDER_SIZE} open={skillsOpen} />
                     </span>
-                    <span className="lh-reveal-folder-label">{t(f.key)}</span>
-                  </button>
-                ))}
+                    <span className="lh-reveal-folder-label">{tr('hero.toolbox', 'Toolbox')}</span>
+                  </Draggable>
+
+                  <Draggable
+                    as="a"
+                    id="file-cv"
+                    className="lh-reveal-folder-btn lh-reveal-file"
+                    href={CV_URL}
+                    download={CV_FILENAME}
+                    draggable={false}
+                    aria-label={tr('hero.cvDownload', 'Download CV')}
+                  >
+                    <CvIcon />
+                    <span className="lh-reveal-folder-label">{tr('hero.cv', 'CV.pdf')}</span>
+                  </Draggable>
+                </div>
+
+                <div className="lh-reveal-col">
+                  {NAV_FOLDERS.map((f) => (
+                    <Draggable
+                      as="button"
+                      type="button"
+                      id={`folder-${f.folderKey}`}
+                      key={f.folderKey}
+                      className="lh-reveal-folder-btn"
+                      onClick={() => handleNavFolderClick(f)}
+                      aria-label={`Open ${t(f.key)}`}
+                    >
+                      <span className="lh-reveal-folder-icon-mirror">
+                        <Folder color={f.color} size={FOLDER_SIZE} open={!!openNavFolders[f.folderKey]} />
+                      </span>
+                      <span className="lh-reveal-folder-label">{t(f.key)}</span>
+                    </Draggable>
+                  ))}
+                </div>
               </div>
 
             </div>
@@ -427,6 +512,14 @@ export default function Hero() {
 
         </div>
       </div>
+
+      <SkillsWindow
+        open={skillsOpen}
+        onClose={() => setSkillsOpen(false)}
+        title={tr('hero.toolbox', 'Toolbox')}
+        languagesLabel={tr('hero.toolboxLanguages', 'Languages')}
+        softwareLabel={tr('hero.toolboxSoftware', 'Software')}
+      />
     </section>
   );
 }

@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
 import { projects } from '../data/content';
 import { useLanguage } from '../context/LanguageContext';
 import Footer from './Footer';
+import StackWindow, { StackIcon } from './StackWindow';
+import { getStackItems } from './stackIcons';
 import './ProjectPage.scss';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -20,6 +21,46 @@ function normalizeScreenshot(entry) {
   return { src: entry?.src, caption: entry?.caption ?? '', captionKey: entry?.captionKey ?? null };
 }
 
+// The title is split into words and letters so every letter can
+// bounce in one after the other (and hop when you hover over it).
+function SplitTitle({ text }) {
+  return (
+    <h1 className="pp-hero-title" aria-label={text}>
+      {text.split(' ').map((word, wi) => (
+        <span className="pp-word" key={wi} aria-hidden="true">
+          {[...word].map((char, ci) => (
+            <span className="pp-char" key={ci}>{char}</span>
+          ))}
+        </span>
+      ))}
+    </h1>
+  );
+}
+
+// One gallery picture. Phone screenshots (taller than wide) get a
+// smaller, tidier frame so they don't tower over the page.
+function GalleryFrame({ src, alt, onOpen, reveal }) {
+  const [portrait, setPortrait] = useState(false);
+  return (
+    <div
+      className={`pp-gallery-frame ${portrait ? 'pp-gallery-frame--portrait' : ''}`}
+      data-reveal={reveal}
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onOpen(); }}
+    >
+      <img
+        src={src}
+        alt={alt}
+        className="pp-gallery-img"
+        decoding="async"
+        onLoad={(e) => setPortrait(e.target.naturalHeight > e.target.naturalWidth * 1.1)}
+      />
+    </div>
+  );
+}
+
 export default function ProjectPage() {
   const { id } = useParams();
   const { t } = useLanguage();
@@ -29,214 +70,210 @@ export default function ProjectPage() {
   const next = projects[currentIdx + 1];
 
   const rootRef = useRef(null);
+  const cardRef = useRef(null);
 
-  // Kept in a ref (not state) so the lightbox open/close handlers —
-  // which live outside the GSAP layout effect — can stop/start the
-  // same Lenis instance the scroll-trigger animations use, the same
-  // pattern Contact.jsx uses for its own scroll lock.
-  const lenisRef = useRef(null);
+  // Translation with an English fallback for keys that don't exist yet
+  const tr = (key, fallback) => {
+    const value = t(key);
+    return !value || value === key ? fallback : value;
+  };
+
+  // Text from a translation key, else a plain string, else nothing
+  const textFrom = (key, plain) => {
+    if (key) {
+      const value = t(key);
+      if (value && value !== key) return value;
+    }
+    return plain || '';
+  };
+
+  // Caption for a screenshot: the translation if it exists, else the plain
+  // caption, else nothing. A missing translation used to show the raw key
+  // (like "project.pyramidNull.shot2") on the page.
+  const captionFor = (shot) => {
+    if (shot?.captionKey) {
+      const translated = t(shot.captionKey);
+      if (translated && translated !== shot.captionKey) return translated;
+    }
+    return shot?.caption || '';
+  };
+
 
   useLayoutEffect(() => {
     if (!project) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const lenis = new Lenis({
-      duration: reduceMotion ? 0 : 1.1,
-      easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: !reduceMotion,
-    });
-    lenis.scrollTo(0, { immediate: true });
-    lenis.on('scroll', ScrollTrigger.update);
-    lenisRef.current = lenis;
+    // Plain native scrolling: the mouse wheel and trackpad behave exactly
+    // as expected (no smoothing layer to lag behind or over-scroll).
+    window.scrollTo(0, 0);
 
-    const raf = time => lenis.raf(time * 1000);
-    gsap.ticker.add(raf);
-    gsap.ticker.lagSmoothing(0);
+    let removeHop = () => {};
+
+    // Switches on the "hidden until scrolled to" styles (see the
+    // data-reveal rules in ProjectPage.scss). Without this class
+    // everything is simply visible.
+    rootRef.current.classList.add('pp-js');
 
     const ctx = gsap.context(() => {
-      if (reduceMotion) {
-        gsap.set('.pp-hero-title, .pp-intro-eyebrow, .pp-intro-tagline, .pp-hero-cta, .pp-hero-bg, .pp-meta-item, .pp-para, .pp-gallery-item, .pp-next-link', { opacity: 1, y: 0, scale: 1, clipPath: 'none' });
-        return;
-      }
+      // With reduced motion everything simply stays where it is.
+      if (reduceMotion) return;
 
-      gsap.fromTo(
-        '.pp-progress-bar',
-        { scaleX: 0 },
-        {
-          scaleX: 1,
-          ease: 'none',
-          scrollTrigger: { trigger: rootRef.current, start: 'top top', end: 'bottom bottom', scrub: true },
-        }
-      );
-
-      // ── Hero entrance — just the title mask-reveal now, since
-      // eyebrow/tagline/CTA moved out of the hero into .pp-intro
-      // (which gets its own scroll-triggered reveal below, same
-      // pattern as the meta strip).
-      gsap.from('.pp-hero-title', { yPercent: 115, duration: 1.1, ease: 'power4.out' });
-
-      // ── Intro row — eyebrow, tagline, CTA. Plain scroll reveal,
-      // same pattern as .pp-meta-item below.
-      gsap.from('.pp-intro-eyebrow, .pp-intro-tagline, .pp-hero-cta', {
-        opacity: 0,
-        y: 22,
-        duration: 0.6,
-        stagger: 0.08,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.pp-intro', start: 'top 90%' },
-      });
-
-      // ── Hero parallax — 3 depth layers, translateY only, all
-      // scrubbed against the SAME .pp-hero start/end range so their
-      // speeds stay in a clean 0.2 : 0.4 : 0.6 ratio. Because these
-      // are scrub tweens (not one-shot .from() calls), they
-      // inherently move in both directions as you scroll — that's
-      // what makes it read as parallax rather than a reveal. The
-      // one-shot entrance animations above are plain timelines with
-      // no scrollTrigger at all, so they only ever play once and
-      // never re-trigger on scroll-up.
-      //
-      // start:'top top' (not 'top bottom') — the hero is the very
-      // first section on the page and is already fully visible at
-      // scroll position 0. 'top bottom' is the right trigger for
-      // elements below the fold that need to enter the viewport as
-      // you scroll down to them, but for a section already in view
-      // at rest it means that trigger point has already elapsed the
-      // instant the page loads, so the scrub starts at some non-zero
-      // progress immediately — which would push the foreground title
-      // up and out of view before any scrolling happened. 'top top'
-      // fires right at scroll=0, so progress is correctly 0 at rest
-      // and only grows as the page actually scrolls.
-      const heroParallax = { trigger: '.pp-hero', start: 'top top', end: 'bottom top', scrub: true };
-      gsap.to('.pp-hero-bg-img, .pp-hero-bg-frame', { yPercent: -20, ease: 'none', scrollTrigger: { ...heroParallax } });
-      gsap.to('.pp-hero-layer--mid', { yPercent: -40, ease: 'none', scrollTrigger: { ...heroParallax } });
-      gsap.to('.pp-hero-layer--fg',  { yPercent: -60, ease: 'none', scrollTrigger: { ...heroParallax } });
-
-      // meta strip
-      gsap.from('.pp-meta-item', {
-        opacity: 0,
-        y: 24,
-        duration: 0.6,
-        stagger: 0.08,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.pp-meta', start: 'top 90%' },
-      });
-
-      // body paragraphs
-      gsap.utils.toArray('.pp-para').forEach(p => {
-        gsap.from(p, {
+      // ── Hero entrance: one quick timeline (about 1.5s in total).
+      //    The picture slides in from the LEFT, then the text arrives
+      //    from the RIGHT: pills, letters bouncing in, tagline, buttons, tags.
+      const intro = gsap.timeline({ defaults: { ease: 'power3.out' } });
+      intro
+        .from('.pp-hero-visual', { xPercent: -30, opacity: 0, duration: 0.9 }, 0)
+        .from('.pp-pill', { x: 60, opacity: 0, duration: 0.5, stagger: 0.07 }, 0.2)
+        .from('.pp-char', {
+          yPercent: -120,
+          rotation: () => gsap.utils.random(-14, 14),
           opacity: 0,
-          y: 36,
           duration: 0.7,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: p, start: 'top 90%' },
+          stagger: 0.03,
+          ease: 'back.out(1.7)',
+        }, 0.35)
+        .from('.pp-hero-tagline', { x: 60, opacity: 0, duration: 0.6 }, 0.75)
+        .from('.pp-hero-info-item', { x: 50, opacity: 0, duration: 0.5, stagger: 0.07 }, 0.85)
+        .from('.pp-hero-actions > *', { y: 24, opacity: 0, duration: 0.5, stagger: 0.08 }, 0.95)
+        .from('.pp-scrollcue', { opacity: 0, duration: 0.5 }, 1.2);
+
+      // Hovering the title: a letter hops
+      const title = rootRef.current.querySelector('.pp-hero-title');
+      const hop = (e) => {
+        const char = e.target.closest('.pp-char');
+        if (!char || char._hopping) return;
+        char._hopping = true;
+        gsap.to(char, {
+          yPercent: -22,
+          rotation: gsap.utils.random(-12, 12),
+          duration: 0.18,
+          ease: 'power2.out',
+          yoyo: true,
+          repeat: 1,
+          onComplete: () => {
+            char._hopping = false;
+            gsap.set(char, { clearProps: 'transform' });
+          },
         });
-      });
+      };
+      title?.addEventListener('mouseover', hop);
+      removeHop = () => title?.removeEventListener('mouseover', hop);
 
-      // ── Gallery — each item's mockup scales in from 1.12→1 as it
-      // enters (a proper reveal, not just a fade), then a slower
-      // scrub parallax continues on the image while its section is
-      // in view. The description text (when present) parallaxes at
-      // roughly half the image's range and in the OPPOSITE
-      // direction — real two-speed depth between the two columns,
-      // not just one element drifting on its own.
-      gsap.utils.toArray('.pp-gallery-item').forEach((item, i) => {
-        const img = item.querySelector('img');
-        const text = item.querySelector('.pp-gallery-text');
-
-        gsap.from(item, {
-          opacity: 0,
-          y: 70,
-          duration: 0.9,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: item, start: 'top 88%' },
-        });
-
-        if (img) {
-          gsap.from(img, {
-            scale: 1.12,
-            duration: 1.25,
-            ease: 'power4.out',
-            scrollTrigger: { trigger: item, start: 'top 82%' },
-          });
-
-          const dir = i % 2 === 0 ? 1 : -1;
-          gsap.fromTo(
-            img,
-            { yPercent: -5 * dir },
-            {
-              yPercent: 5 * dir,
-              ease: 'none',
-              scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: true },
-            }
-          );
-
-          if (text) {
-            gsap.fromTo(
-              text,
-              { yPercent: 6 * dir },
-              {
-                yPercent: -6 * dir,
-                ease: 'none',
-                scrollTrigger: { trigger: item, start: 'top bottom', end: 'bottom top', scrub: true },
-              }
-            );
-          }
-        }
-      });
-
-      gsap.from('.pp-next-link', {
-        opacity: 0,
-        y: 28,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.pp-next', start: 'top 92%' },
-      });
+      // ── Light hero parallax: picture and text drift at slightly different speeds
+      const heroScroll = { trigger: '.pp-hero', start: 'top top', end: 'bottom top', scrub: true };
+      gsap.to('.pp-hero-visual', { yPercent: -4, ease: 'none', scrollTrigger: { ...heroScroll } });
+      gsap.to('.pp-hero-text',   { yPercent: -8, ease: 'none', scrollTrigger: { ...heroScroll } });
     }, rootRef);
 
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener('load', refresh);
-
     return () => {
-      window.removeEventListener('load', refresh);
-      gsap.ticker.remove(raf);
+      removeHop();
       ctx.revert();
       ScrollTrigger.getAll().forEach(st => st.kill());
-      lenis.destroy();
-      lenisRef.current = null;
+      rootRef.current?.classList.remove('pp-js');
     };
   }, [id, project]);
 
-  // ── Lightbox ──
+  // ── Scroll reveals: a plain IntersectionObserver. Each element appears as
+  //    soon as it enters the screen, wherever it is on the page. It can never
+  //    get stuck hidden (the old scroll-position maths could, when the page
+  //    height changed after pictures loaded).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !project) return;
+    const items = root.querySelectorAll('[data-reveal]');
+
+    if (!('IntersectionObserver' in window)) {
+      items.forEach(el => el.classList.add('is-revealed'));
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -3% 0px' });
+
+    items.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, [id, project]);
+
+  // ── Reading progress bar, from the real page height
+  useEffect(() => {
+    const bar = rootRef.current?.querySelector('.pp-progress-bar');
+    if (!bar) return;
+
+    let ticking = false;
+    const update = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+      bar.style.transform = `scaleX(${p})`;
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [id, project]);
+
   // Tracks a failed hero image load (broken/missing file — common
-  // cause: case-sensitive hosts, since a path like '/images/Foo.jpeg'
-  // 404s if the actual deployed file is 'foo.jpeg'). Falls back to
-  // the plain gradient instead of leaving a blank/broken image with
-  // just the scrim showing over it. Reset whenever the project
-  // changes so navigating between projects retries cleanly.
+  // cause: case-sensitive hosts, since '/images/Foo.jpeg' 404s if the
+  // deployed file is 'foo.jpeg'). Falls back to the plain gradient.
+  // Reset whenever the project changes so navigating between
+  // projects retries cleanly.
   const [heroImgError, setHeroImgError] = useState(false);
   useEffect(() => { setHeroImgError(false); }, [id]);
 
+  // Tilt the hero picture slightly towards the cursor
+  const handleCardMove = (e) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    el.style.setProperty('--tilt-x', `${py * -7}deg`);
+    el.style.setProperty('--tilt-y', `${px * 7}deg`);
+  };
+  const handleCardLeave = () => {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.setProperty('--tilt-x', '0deg');
+    el.style.setProperty('--tilt-y', '0deg');
+  };
+
+  // ── Lightbox ──
   const [lightbox, setLightbox] = useState({ open: false, index: 0 });
+  const [stackOpen, setStackOpen] = useState(false);
+  useEffect(() => { setStackOpen(false); }, [id]);
 
   const openLightbox = (index) => {
     setLightbox({ open: true, index });
     document.body.style.overflow = 'hidden';
-    lenisRef.current?.stop();
   };
   const closeLightbox = () => {
     setLightbox(l => ({ ...l, open: false }));
     document.body.style.overflow = '';
-    lenisRef.current?.start();
   };
   const stepLightbox = (delta, total) => {
     setLightbox(l => ({ ...l, index: (l.index + delta + total) % total }));
   };
 
   const normalizedScreenshots = project
-    ? (project.screenshots || []).map(normalizeScreenshot).filter(s => s.src)
+    ? (project.screenshots || []).map(normalizeScreenshot).filter(s => s.src && !s.src.endsWith('/'))
     : [];
 
   useEffect(() => {
@@ -254,8 +291,8 @@ export default function ProjectPage() {
   if (!project) {
     return (
       <div className="pp-notfound">
-        <p>Project not found.</p>
-        <Link to="/">← Back home</Link>
+        <p>{tr('project.notFound', 'Project not found.')}</p>
+        <Link to="/">← {tr('project.backHome', 'Back home')}</Link>
       </div>
     );
   }
@@ -264,168 +301,170 @@ export default function ProjectPage() {
   const heroSrc = normalizedScreenshots[0]?.src;
   const galleryShots = normalizedScreenshots.slice(1);
   const activeShot = normalizedScreenshots[lightbox.index];
+  const visualSrc = !heroImgError ? (mockup || heroSrc) : null;
+  const stackItems = getStackItems(tags || []);
+  const challengeText = textFrom(project.challengeKey, project.challenge);
+  const learnedText = textFrom(project.learnedKey, project.learned);
+  const paragraphs = (text) => text.split('\n\n');
 
   return (
     <div className="pp-root" ref={rootRef} style={{ '--proj-color': color }}>
 
       <div className="pp-progress"><div className="pp-progress-bar" /></div>
 
-      <nav className="pp-nav">
-        <Link to="/" className="pp-back">← Back</Link>
-      </nav>
+      <Link to="/" className="pp-back">← {tr('project.back', 'Back')}</Link>
 
-      {/* Hero — full-viewport cinematic section. The mockup (or the
-          CSS device frame, for projects without a custom mockup
-          image yet) fills the entire screen as a background layer;
-          a dark gradient scrim sits above it for legibility; only
-          the project title sits at the bottom, large. Eyebrow,
-          tagline, and the "View live" CTA moved to .pp-intro
-          directly below — the information isn't gone, it's just not
-          crowding the big visual moment anymore.
-
-          Same three-layer parallax structure as before, now applied
-          to this full-bleed layout:
-          1. .pp-hero-bg     (mockup/frame background) — 0.2x
-          2. .pp-hero-layer--mid (floating decorative shapes) — 0.4x
-          3. .pp-hero-layer--fg  (title)                — 0.6x
-          .pp-hero stays position:relative + overflow:hidden so the
-          0.2x background's extra buffer height (see .pp-hero-bg-img
-          in ProjectPage.scss) never exposes a gap at its edges. */}
+      {/* Hero: picture on the left, text on the right. Everything arrives
+          one thing after another (see the intro timeline above). */}
       <header className="pp-hero">
-        <div
-          className={`pp-hero-bg ${heroSrc ? 'pp-hero-bg--clickable' : ''}`}
-          onClick={() => heroSrc && openLightbox(0)}
-          role={heroSrc ? 'button' : undefined}
-          tabIndex={heroSrc ? 0 : undefined}
-          onKeyDown={(e) => { if (heroSrc && (e.key === 'Enter' || e.key === ' ')) openLightbox(0); }}
-        >
-          {mockup && !heroImgError ? (
-            // Author-supplied composed mockup (e.g. a phone-in-hand
-            // photo, or a designed full-canvas composition like a
-            // diagonal-split background with device renders) —
-            // rendered full-bleed as the hero's background. Clicking
-            // it still opens the lightbox on the plain screenshot
-            // (heroSrc), not this presentation image, so people can
-            // still zoom into the actual UI cleanly.
-            <img
-              src={mockup}
-              alt={name}
-              className="pp-hero-bg-img"
-              onError={() => setHeroImgError(true)}
-            />
-          ) : heroSrc && !heroImgError ? (
-            // No custom mockup yet — the raw screenshot itself,
-            // full-bleed, no device chrome. Same treatment as the
-            // mockup path above; just not composed into a hardware
-            // mockup yet.
-            <img
-              src={heroSrc}
-              alt={name}
-              className="pp-hero-bg-img"
-              onError={() => setHeroImgError(true)}
-            />
-          ) : (
-            // No screenshots at all, OR the image failed to load —
-            // plain tinted gradient so the full-screen layout still
-            // holds together instead of showing a blank/broken image.
-            <div className="pp-hero-bg-frame" />
-          )}
-          <div className="pp-hero-scrim" aria-hidden="true" />
-        </div>
+        <span className="pp-hero-glow pp-hero-glow--1" aria-hidden="true" />
+        <span className="pp-hero-glow pp-hero-glow--2" aria-hidden="true" />
 
-        <div className="pp-hero-layer pp-hero-layer--mid" aria-hidden="true">
-          <span className="pp-hero-float pp-hero-float--1" />
-          <span className="pp-hero-float pp-hero-float--2" />
-        </div>
+        <div className="pp-hero-inner">
 
-        <div className="pp-hero-layer pp-hero-layer--fg">
-          <div className="pp-hero-title-mask">
-            <h1 className="pp-hero-title">{name}</h1>
-          </div>
-        </div>
-
-        <span className="pp-hero-scrollcue" aria-hidden="true" />
-      </header>
-
-      {/* Intro — eyebrow, tagline, and the live-link CTA, relocated
-          out of the hero itself so the full-screen visual stays
-          uncluttered. Shares the same alignment container as meta/
-          body below it. */}
-      <div className="pp-intro">
-        <p className="pp-intro-eyebrow">{t(platformKey)} · {t(categoryKey)} · {year}</p>
-        <p className="pp-intro-tagline">{t(taglineKey)}</p>
-        {link && (
-          <a href={link} target="_blank" rel="noopener noreferrer" className="pp-hero-cta">
-            View live ↗
-          </a>
-        )}
-      </div>
-
-      {/* Meta strip */}
-      <div className="pp-meta">
-        <div className="pp-meta-card">
-          <div className="pp-meta-item">
-            <span className="pp-meta-label">Role</span>
-            <span className="pp-meta-value">{t(roleKey)}</span>
-          </div>
-          <div className="pp-meta-item">
-            <span className="pp-meta-label">Year</span>
-            <span className="pp-meta-value">{year}</span>
-          </div>
-          {credits && (
-            <div className="pp-meta-item">
-              <span className="pp-meta-label">With</span>
-              <span className="pp-meta-value">{credits.join(' & ')}</span>
+          <div className="pp-hero-visual">
+            <div
+              ref={cardRef}
+              className={`pp-hero-card ${heroSrc ? 'pp-hero-card--clickable' : ''}`}
+              onClick={() => heroSrc && openLightbox(0)}
+              onMouseMove={handleCardMove}
+              onMouseLeave={handleCardLeave}
+              role={heroSrc ? 'button' : undefined}
+              tabIndex={heroSrc ? 0 : undefined}
+              aria-label={heroSrc ? `${name}: open screenshot` : undefined}
+              onKeyDown={(e) => { if (heroSrc && (e.key === 'Enter' || e.key === ' ')) openLightbox(0); }}
+            >
+              {visualSrc ? (
+                // Author-supplied composed mockup if there is one, otherwise
+                // the first screenshot. Clicking opens the plain screenshot
+                // in the lightbox so people can zoom into the real UI.
+                <img
+                  src={visualSrc}
+                  alt={name}
+                  className="pp-hero-img"
+                  onError={() => setHeroImgError(true)}
+                />
+              ) : (
+                // No image at all, or it failed to load: a tinted gradient
+                <div className="pp-hero-fallback" aria-hidden="true" />
+              )}
             </div>
-          )}
-          <div className="pp-meta-item pp-meta-stack">
-            <span className="pp-meta-label">Stack</span>
-            <span className="pp-meta-value">{tags.join(', ')}</span>
+          </div>
+
+          <div className="pp-hero-text">
+            <div className="pp-pills">
+              <span className="pp-pill">{t(platformKey)}</span>
+              <span className="pp-pill">{t(categoryKey)}</span>
+              <span className="pp-pill">{year}</span>
+            </div>
+
+            <SplitTitle text={name} />
+
+            <p className="pp-hero-tagline">{t(taglineKey)}</p>
+
+            <dl className="pp-hero-info">
+              <div className="pp-hero-info-item">
+                <dt>{tr('project.role', 'Role')}</dt>
+                <dd>{t(roleKey)}</dd>
+              </div>
+              {credits?.length > 0 && (
+                <div className="pp-hero-info-item">
+                  <dt>{tr('project.with', 'With')}</dt>
+                  <dd>{credits.join(' & ')}</dd>
+                </div>
+              )}
+            </dl>
           </div>
         </div>
-      </div>
+
+        {/* One centred row under the picture and text */}
+        <div className="pp-hero-actions">
+          {link && (
+            <a href={link} target="_blank" rel="noopener noreferrer" className="pp-hero-cta">
+              {tr('project.viewLive', 'View live')} <span aria-hidden="true">↗</span>
+            </a>
+          )}
+          {heroSrc && (
+            <button type="button" className="pp-hero-ghost" onClick={() => openLightbox(0)}>
+              {tr('project.openPreview', 'Open preview')}
+            </button>
+          )}
+          {stackItems.length > 0 && (
+            <button
+              type="button"
+              className="pp-stack-btn"
+              onClick={() => setStackOpen(true)}
+              aria-haspopup="dialog"
+            >
+              <span className="pp-stack-icons" aria-hidden="true">
+                {stackItems.slice(0, 4).map(item => (
+                  <span className="pp-stack-icon" key={item.name} title={item.name}>
+                    <StackIcon item={item} size={20} />
+                  </span>
+                ))}
+              </span>
+              <span>{tr('project.builtWith', 'Built with')}</span>
+              {stackItems.length > 4 && (
+                <span className="pp-stack-more">+{stackItems.length - 4}</span>
+              )}
+              <span aria-hidden="true">→</span>
+            </button>
+          )}
+        </div>
+
+        <span className="pp-scrollcue" aria-hidden="true">
+          <span className="pp-scrollcue-dot" />
+        </span>
+      </header>
 
       {/* Body */}
       <section className="pp-body">
         <div className="pp-body-inner">
           {bodyKeys.map((key, i) => (
-            <p key={i} className="pp-para">{t(key)}</p>
+            <p key={i} className="pp-para" data-reveal="right">{t(key)}</p>
           ))}
         </div>
       </section>
 
-      {/* Gallery — every shot rendered inside the same device mockup
-          as the hero, alternating sides with its own description
-          text (when the shot has a caption), same alternating-block
-          pattern used in About.jsx's Story/Life tabs. */}
+      {/* Gallery: pictures and text alternate sides */}
       {galleryShots.length > 0 && (
         <section className="pp-gallery">
           {galleryShots.map((shot, i) => {
-            // captionKey (translated) takes priority; plain caption
-            // is the fallback for any screenshot not yet migrated to
-            // a translation key.
-            const captionText = shot.captionKey ? t(shot.captionKey) : shot.caption;
+            const captionText = captionFor(shot);
             return (
               <figure
                 key={i}
-                className={`pp-gallery-item ${captionText ? 'pp-gallery-item--text' : ''} ${i % 2 === 1 ? 'pp-gallery-item--reverse' : ''}`}
+                className={[
+                  'pp-gallery-item',
+                  captionText ? 'pp-gallery-item--text' : '',
+                  i % 2 === 1 ? 'pp-gallery-item--flip' : '',
+                ].join(' ')}
               >
-                <div className="pp-gallery-visual">
-                  <div
-                    className="pp-gallery-frame"
-                    onClick={() => openLightbox(i + 1)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') openLightbox(i + 1); }}
-                  >
-                    <img src={shot.src} alt={captionText || name} className="pp-gallery-img" />
-                  </div>
-                </div>
+                <GalleryFrame
+                  src={shot.src}
+                  alt={captionText || name}
+                  onOpen={() => openLightbox(i + 1)}
+                  reveal={i % 2 === 0 ? 'left' : 'right'}
+                />
+
                 {captionText && (
                   <div className="pp-gallery-text">
-                    <span className="pp-gallery-num">{String(i + 1).padStart(2, '0')}</span>
+                    <span
+                      className="pp-gallery-num"
+                      data-reveal={i % 2 === 0 ? 'right' : 'left'}
+                      style={{ '--d': '0.1s' }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
                     {captionText.split('\n\n').map((para, pi) => (
-                      <p className="pp-gallery-caption" key={pi}>{para}</p>
+                      <p
+                        className="pp-gallery-caption"
+                        key={pi}
+                        data-reveal={i % 2 === 0 ? 'right' : 'left'}
+                        style={{ '--d': `${0.18 + pi * 0.1}s` }}
+                      >
+                        {para}
+                      </p>
                     ))}
                   </div>
                 )}
@@ -444,15 +483,44 @@ export default function ProjectPage() {
         </div>
       )}
 
+      {/* What was hard, and what I learned */}
+      {(challengeText || learnedText) && (
+        <section className={`pp-reflect ${challengeText && learnedText ? '' : 'pp-reflect--single'}`}>
+          {challengeText && (
+            <article className="pp-reflect-card" data-reveal="left">
+              <span className="pp-reflect-icon" aria-hidden="true">🧩</span>
+              <h2 className="pp-reflect-label">{tr('project.challengeLabel', 'The challenge')}</h2>
+              {paragraphs(challengeText).map((para, i) => (
+                <p className="pp-reflect-text" key={i}>{para}</p>
+              ))}
+            </article>
+          )}
+          {learnedText && (
+            <article
+              className="pp-reflect-card pp-reflect-card--dark"
+              data-reveal="right"
+              style={{ '--d': '0.1s' }}
+            >
+              <span className="pp-reflect-icon" aria-hidden="true">💡</span>
+              <h2 className="pp-reflect-label">{tr('project.learnedLabel', 'What I learned')}</h2>
+              {paragraphs(learnedText).map((para, i) => (
+                <p className="pp-reflect-text" key={i}>{para}</p>
+              ))}
+            </article>
+          )}
+        </section>
+      )}
+
       {/* Next / prev */}
       <nav className="pp-next">
         {prev ? (
           <Link
             to={`/project/${prev.id}`}
             className="pp-next-link pp-next-prev"
+            data-reveal="left"
             style={{ '--link-color': prev.color }}
           >
-            <span className="pp-next-dir">← Previous</span>
+            <span className="pp-next-dir">← {tr('project.previous', 'Previous')}</span>
             <span className="pp-next-name">{prev.name}</span>
           </Link>
         ) : <span />}
@@ -460,15 +528,23 @@ export default function ProjectPage() {
           <Link
             to={`/project/${next.id}`}
             className="pp-next-link pp-next-next"
+            data-reveal="right"
             style={{ '--link-color': next.color }}
           >
-            <span className="pp-next-dir">Next →</span>
+            <span className="pp-next-dir">{tr('project.next', 'Next')} →</span>
             <span className="pp-next-name">{next.name}</span>
           </Link>
         ) : <span />}
       </nav>
 
       <Footer />
+
+      <StackWindow
+        open={stackOpen}
+        onClose={() => setStackOpen(false)}
+        title={tr('project.builtWith', 'Built with')}
+        items={stackItems}
+      />
 
       {/* Lightbox */}
       <div
@@ -504,10 +580,8 @@ export default function ProjectPage() {
         )}
 
         <figure className="pp-lightbox-figure" onClick={(e) => e.stopPropagation()}>
-          {activeShot && <img src={activeShot.src} alt={(activeShot.captionKey ? t(activeShot.captionKey) : activeShot.caption) || name} />}
-          {(activeShot?.captionKey || activeShot?.caption) && (
-            <figcaption>{activeShot.captionKey ? t(activeShot.captionKey) : activeShot.caption}</figcaption>
-          )}
+          {activeShot && <img src={activeShot.src} alt={captionFor(activeShot) || name} />}
+          {captionFor(activeShot) && <figcaption>{captionFor(activeShot)}</figcaption>}
         </figure>
       </div>
 

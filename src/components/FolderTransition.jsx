@@ -33,11 +33,6 @@ export default function FolderTransition() {
         const vh       = window.innerHeight;
         const p = Math.min(1, Math.max(0, -rect.top / (sectionH - vh)));
 
-        // 0→0.3: folder slides up from bottom, label fades in
-        // 0.3→0.6: folder opens (lid rotates)
-        // 0.6→0.85: folder scales up and zooms to fill viewport
-        // 0.85→1: overlay fades to bg colour, section transitions
-
         if (folderRef.current) {
           const entryP  = Math.min(1, p / 0.3);
           const entryE  = 1 - Math.pow(1 - entryP, 3);

@@ -1,8 +1,16 @@
 @use '../styles' as *;
 
+@use './sectionTheme' as theme;
+
+// Colours come from _sectionTheme.scss (shared with the footer)
+$a-bg: theme.$bg;
+$a-ink: theme.$ink;
+$a-active: theme.$active;            // buttons and the selected tab
+$a-active-text: theme.$accent-text;  // blue used for hovered text
+
 .about-section {
-  background: var(--bg);
-  border-top: 2px solid var(--ink);
+  background: $a-bg;
+  border-top: 1px solid rgba($a-ink, 0.12);
 }
 /* Intro */
 .about-intro {
@@ -19,11 +27,11 @@
   margin: 0;
 }
 .about-reveal-text span {
-  color: rgba(26,26,26,0.16);
+  color: rgba($a-ink, 0.26);
   transition: color 0.4s ease;
 }
 .about-reveal-text span.is-active {
-  color: var(--ink);
+  color: $a-ink;
 }
 
 /* Notes-window wrapper */
@@ -38,8 +46,8 @@
   border-radius: 14px;
   overflow: hidden;
   box-shadow:
-    0 60px 120px rgba(0,0,0,0.16),
-    0 8px 24px rgba(0,0,0,0.08),
+    0 60px 120px rgba($a-ink, 0.18),
+    0 8px 24px rgba($a-ink, 0.08),
     inset 0 1px 0 rgba(255,255,255,0.6);
   border: 1px solid rgba(0,0,0,0.06);
 }
@@ -105,10 +113,18 @@
   @include scaled-font(13px);
   color: rgba(0,0,0,0.7);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.an-sidebar-item:hover:not(.an-sidebar-item--disabled) { background: rgba(0,0,0,0.04); }
-.an-sidebar-item--active {
-  background: var(--purple-mid);
+// Hovering a tab: soft blue background and dark text, so it stays readable
+.an-sidebar-item:hover:not(.an-sidebar-item--disabled) {
+  background: rgba($a-active, 0.12);
+  color: $a-ink;
+}
+// Selected tab: solid blue, white text. It keeps this look while hovered
+// (before, the hover background replaced the blue and left white text on light grey).
+.an-sidebar-item.an-sidebar-item--active,
+.an-sidebar-item.an-sidebar-item--active:hover {
+  background: $a-active;
   color: #fff;
 }
 .an-sidebar-item--muted {
@@ -124,6 +140,9 @@
   background: currentColor;
   opacity: 0.5;
   flex-shrink: 0;
+}
+.an-sidebar-item--active .an-sidebar-dot {
+  opacity: 1;
 }
 
 .about-notes-main {
@@ -267,12 +286,13 @@
   flex-wrap: wrap;
 }
 
+// CV button: blue instead of purple, to match the new theme
 .about-cv-btn {
   @include pill-button;
   position: relative;
   overflow: hidden;
   @include scaled-font(15px);
-  background: var(--accent-vivid);
+  background: $a-active;
   transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease;
 }
 .about-cv-btn::before {
@@ -286,9 +306,9 @@
   left: 100%;
 }
 .about-cv-btn:hover {
-  background: var(--purple-mid);
+  background: $a-ink;
   transform: translateY(-3px);
-  box-shadow: 0 12px 28px rgba(124,58,237,0.28);
+  box-shadow: 0 12px 28px rgba($a-active, 0.32);
 }
 .about-cv-btn svg {
   transition: transform 0.2s ease;
@@ -315,7 +335,7 @@
   transition: color 0.2s ease, gap 0.2s ease;
 }
 .about-secondary-link:hover {
-  color: var(--accent-vivid);
+  color: $a-active-text;
   gap: 10px;
 }
 .about-secondary-text {
@@ -328,7 +348,7 @@
   position: absolute;
   width: 100%;
   height: 2px;
-  background: linear-gradient(to right, var(--accent-vivid), #C084FC);
+  background: linear-gradient(to right, $a-active, theme.$accent);
   left: 0;
   transform: scaleX(0);
   transform-origin: right;
@@ -481,51 +501,6 @@
   color: var(--ink);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   Skills tab — a plain CV-style list. All four categories shown at
-   once, each with just a heading and its tool tags: no icons, no
-   descriptions, no tab-switching. This replaced an earlier version
-   with per-category "fake app chrome" (terminal/IDE/VS Code/Figma)
-   and, before that, a single tab-switched card with icons and story
-   text — both read as more of a novelty than an actual skills
-   section. A CV lists everything at once; this does too.
-   ═══════════════════════════════════════════════════════════════ */
-
-.an-skill-cv-list {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-
-.an-skill-group {
-  padding-left: 16px;
-  border-left: 3px solid var(--cv-accent, var(--purple-mid));
-}
-.an-skill-group-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 400;
-  color: var(--ink);
-  margin: 0 0 12px;
-}
-
-.an-skill-cv-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.an-skill-cv-tag {
-  display: inline-flex;
-  align-items: center;
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  color: rgba(0,0,0,0.65);
-  background: rgba(0,0,0,0.035);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 6px;
-  padding: 7px 12px;
-}
-
 @include respond($bp-md) {
   .about-notes-sidebar { display: none; }
   .about-notes-main { padding: 32px 28px 56px; }
@@ -542,5 +517,4 @@
   .about-fact:nth-child(2) { border-right: none; }
   .about-fact:nth-child(3) { border-right: 1px solid var(--ink); border-top: 1px solid var(--ink); }
   .about-fact:nth-child(4) { border-top: 1px solid var(--ink); }
-  .an-skill-group { padding-left: 12px; }
 }

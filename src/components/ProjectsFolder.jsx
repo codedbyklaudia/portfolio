@@ -35,109 +35,12 @@ export function FolderSVG({ color, isOpen }) {
   );
 }
 
-// ── Mac "Get Info" dialog — restyled to read as an extension of the Finder
-// window itself (same title-bar/toolbar chrome, same fonts/greys/pill tags)
-// rather than a separate glassy modal design. ──
-function MacDialog({ project, onClose }) {
-  const { id, name, type, color, tagline, tags, credits } = project;
-  const navigate = useNavigate();
-
-  // "Open Project" — instead of navigating instantly, an expanding
-  // circle in the project's own color grows from the exact spot you
-  // clicked, covers the screen, and only THEN navigates — same
-  // "themed transition before the real thing happens" pattern as the
-  // language-switch wave on Hero.jsx, just click-triggered instead of
-  // scroll-triggered.
-  const [opening, setOpening] = useState(null);   // { x, y } or null
-  const [expanded, setExpanded] = useState(false);
-
-  const handleOpenProject = (e) => {
-    e.preventDefault();
-    const { clientX, clientY } = e;
-    setOpening({ x: clientX, y: clientY });
-    // Double rAF: paints the 0px circle first, THEN triggers the
-    // transition to full size on the next frame — without this the
-    // browser can collapse the 0→full change into a single paint and
-    // the transition never visibly plays.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setExpanded(true));
-    });
-    setTimeout(() => {
-      navigate(`/project/${id}`);
-    }, 900);
-  };
-
-  return (
-    <div className="mac-overlay" onClick={onClose}>
-      {opening && (
-        <div
-          className="pf-open-overlay"
-          aria-hidden="true"
-          style={{
-            background: color,
-            clipPath: expanded
-              ? `circle(150% at ${opening.x}px ${opening.y}px)`
-              : `circle(0px at ${opening.x}px ${opening.y}px)`,
-          }}
-        />
-      )}
-      <div className="mac-win" style={{'--mc': color}} onClick={e => e.stopPropagation()}>
-
-        <div className="pf-titlebar">
-          <div className="pf-traffic">
-            <span className="pf-dot pf-dot--r" onClick={onClose} style={{ cursor: 'pointer' }} />
-            <span className="pf-dot pf-dot--y" />
-            <span className="pf-dot pf-dot--g" />
-          </div>
-          <span className="pf-titlebar-title">{name}</span>
-        </div>
-
-        <div className="pf-toolbar mac-toolbar">
-          <div className="pf-breadcrumb">
-            <span className="pf-breadcrumb-icon">📁</span>
-            Projects / {name}
-          </div>
-          <span className="mac-type-pill">{type}</span>
-        </div>
-
-        <div className="mac-body">
-          <div className="mac-row">
-            <div className="mac-ico"><FolderSVG color={color} isOpen/></div>
-            <div className="mac-msg">
-              <p className="mac-tag">"{tagline}"</p>
-              {credits && <p className="mac-cred">🤝 {credits.join(' & ')}</p>}
-            </div>
-          </div>
-
-          <div className="mac-sep"/>
-
-          <div className="mac-chips">
-            {tags.map(t => (
-              <span key={t} className="mac-chip">
-                <span className="mac-chip-dot" style={{ background: color }} />
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="pf-statusbar mac-statusbar">
-          <button className="mac-btn mac-cancel" onClick={onClose}>Cancel</button>
-          <button className="mac-btn mac-ok" style={{ background: color }} onClick={handleOpenProject}>
-            Open Project →
-          </button>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
+// trKey is the translation key, label the English fallback
 const SIDEBAR_LOCATIONS = [
-  { key: 'all',    label: 'All Projects' },
-  { key: 'web',    label: 'Web' },
-  { key: 'app',    label: 'Apps' },
-  { key: 'collab', label: 'Collaborative' },
+  { key: 'all',    trKey: 'projects.all',    label: 'All Projects' },
+  { key: 'web',    trKey: 'projects.web',    label: 'Web' },
+  { key: 'app',    trKey: 'projects.apps',   label: 'Apps' },
+  { key: 'collab', trKey: 'projects.collab', label: 'Collaborative' },
 ];
 
 function getCategories(project) {
@@ -148,22 +51,26 @@ function getCategories(project) {
 
 export default function ProjectsFolder() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  // Translation with an English fallback for keys that don't exist yet
+  const tr = (key, fallback) => {
+    const value = t(key);
+    return !value || value === key ? fallback : value;
+  };
+
   const sectionRef                 = useRef(null);
-  const [openId, setOpenId]       = useState(null);
+  const timerRef                   = useRef(null);
   const [activeLoc, setActiveLoc] = useState('all');
   const [progress, setProgress]   = useState(0);
+  const [opening, setOpening]     = useState(null);   // { x, y, color } or null
+  const [expanded, setExpanded]   = useState(false);
 
-  const openProject = projects.find(p => p.id === openId);
   const visibleProjects = activeLoc === 'all'
     ? projects
     : projects.filter(p => getCategories(p).includes(activeLoc));
 
-  useEffect(() => {
-    document.body.style.overflow = openId ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [openId]);
-
-  // ── Own scroll-driven parallax reveal 
+  // ── Own scroll-driven parallax reveal
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -187,113 +94,154 @@ export default function ProjectsFolder() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const finderEase  = 1 - Math.pow(1 - progress, 3);
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
+  // Click a folder: a circle in the project's colour grows from the click,
+  // covers the screen, and then the project page opens.
+  const openProject = (event, project) => {
+    if (opening) return;
+
+    let x = event.clientX;
+    let y = event.clientY;
+    if (!x && !y) {
+      // Opened with the keyboard: grow from the middle of the folder
+      const rect = event.currentTarget.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+
+    setOpening({ x, y, color: project.color });
+    // Double rAF: paint the 0px circle first, then start the transition
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setExpanded(true));
+    });
+    timerRef.current = setTimeout(() => {
+      navigate(`/project/${project.id}`);
+    }, 900);
+  };
+
+  const finderEase = 1 - Math.pow(1 - progress, 3);
+  const itemCount = visibleProjects.length;
 
   return (
     <>
       <section id="projects-folder" className="pf-section" ref={sectionRef}>
+        <div className="pf-layout">
 
-        <div className="pf-finder-wrap">
+          {/* ── Left: title ── */}
           <div
-            className="pf-sticky-note"
+            className="pf-intro"
             style={{
               opacity: finderEase,
-              transform: `translateY(${(1 - finderEase) * 20}px) rotate(6deg)`,
+              transform: `translateY(${(1 - finderEase) * 30}px)`,
             }}
           >
-            {t('projects.stickyNote')}
+            <h2 className="pf-title">{tr('projects.title', 'Selected work')}</h2>
+            <p className="pf-lead">
+              {tr('projects.lead', "A few things I've designed and built. Open a folder to see the full story.")}
+            </p>
           </div>
 
-          <div
-            className="pf-finder"
-            style={{
-              opacity: finderEase,
-              transform: `translateY(${(1 - finderEase) * 70}px) scale(${0.94 + finderEase * 0.06})`,
-            }}
-          >
+          {/* ── Right: Mac Finder window ── */}
+          <div className="pf-finder-wrap">
+            <div
+              className="pf-sticky-note"
+              style={{
+                opacity: finderEase,
+                transform: `translateY(${(1 - finderEase) * 20}px) rotate(6deg)`,
+              }}
+            >
+              {t('projects.stickyNote')}
+            </div>
 
-          {/* ── Window chrome ── */}
-          <div className="pf-titlebar">
-            <div className="pf-traffic">
-              <span className="pf-dot pf-dot--r" />
-              <span className="pf-dot pf-dot--y" />
-              <span className="pf-dot pf-dot--g" />
-            </div>
-            <span className="pf-titlebar-title">CodedByKlaudia - Projects</span>
-          </div>
+            <div
+              className="pf-finder"
+              style={{
+                opacity: finderEase,
+                transform: `translateY(${(1 - finderEase) * 70}px) scale(${0.94 + finderEase * 0.06})`,
+              }}
+            >
 
-          <div className="pf-toolbar">
-            <div className="pf-nav-btns">
-              <button className="pf-nav-btn" aria-hidden="true">‹</button>
-              <button className="pf-nav-btn" aria-hidden="true">›</button>
-            </div>
-            <div className="pf-breadcrumb">
-              <span className="pf-breadcrumb-icon">📁</span>
-              Projects — {activeLoc === 'all' ? 'All' : SIDEBAR_LOCATIONS.find(l => l.key === activeLoc)?.label}
-            </div>
-            <div className="pf-search">
-              <span>🔍</span>
-              <span className="pf-search-placeholder">Search</span>
-            </div>
-          </div>
-
-          {/* ── Body: sidebar + grid ── */}
-          <div className="pf-body">
-            <aside className="pf-sidebar">
-              <p className="pf-sidebar-label">Favourites</p>
-              {SIDEBAR_LOCATIONS.map(loc => (
-                <button
-                  key={loc.key}
-                  className={`pf-sidebar-item ${activeLoc === loc.key ? 'pf-sidebar-item--active' : ''}`}
-                  onClick={() => setActiveLoc(loc.key)}
-                >
-                  <span className="pf-sidebar-dot" />
-                  {loc.label}
-                </button>
-              ))}
-              <p className="pf-sidebar-label">Tags</p>
-              <div className="pf-sidebar-tags">
-                <span className="pf-tag-dot" style={{ background: '#6B4FA0' }} />
-                <span className="pf-tag-dot" style={{ background: '#C95B2A' }} />
-                <span className="pf-tag-dot" style={{ background: '#3A7A6A' }} />
+              {/* Title bar: traffic lights, back/forward, title */}
+              <div className="pf-titlebar">
+                <div className="pf-traffic">
+                  <span className="pf-dot pf-dot--r" />
+                  <span className="pf-dot pf-dot--y" />
+                  <span className="pf-dot pf-dot--g" />
+                </div>
+                <div className="pf-nav-btns" aria-hidden="true">
+                  <span className="pf-nav-btn">‹</span>
+                  <span className="pf-nav-btn">›</span>
+                </div>
+                <span className="pf-titlebar-title">
+                  <span className="pf-titlebar-icon" aria-hidden="true">📁</span>
+                  {tr('projects.windowTitle', 'Projects')}
+                </span>
               </div>
-            </aside>
 
-            <div className="pf-grid-wrap">
-              <div className="pf-grid">
-                {visibleProjects.map((proj, i) => {
-                  const cardP    = Math.min(1, Math.max(0, (progress - 0.45 - i * 0.05) / 0.4));
-                  const cardEase = 1 - Math.pow(1 - cardP, 3);
-                  return (
+              {/* Body: sidebar + grid */}
+              <div className="pf-body">
+                <aside className="pf-sidebar">
+                  <p className="pf-sidebar-label">{tr('projects.favourites', 'Favourites')}</p>
+                  {SIDEBAR_LOCATIONS.map(loc => (
                     <button
-                      key={proj.id}
-                      className="pf-card"
-                      style={{
-                        '--fc': proj.color,
-                        opacity: cardEase,
-                        transform: `translateY(${(1 - cardEase) * 24}px) scale(${0.94 + cardEase * 0.06})`,
-                      }}
-                      onClick={() => setOpenId(proj.id)}
+                      key={loc.key}
+                      className={`pf-sidebar-item ${activeLoc === loc.key ? 'pf-sidebar-item--active' : ''}`}
+                      onClick={() => setActiveLoc(loc.key)}
                     >
-                      <FolderSVG color={proj.color} isOpen={false} />
-                      <span className="pf-card-name">{proj.name}</span>
-                      <span className="pf-card-type">{proj.type}</span>
+                      <span className="pf-sidebar-dot" />
+                      {tr(loc.trKey, loc.label)}
                     </button>
-                  );
-                })}
+                  ))}
+                </aside>
+
+                <div className="pf-grid-wrap">
+                  <div className="pf-grid">
+                    {visibleProjects.map((proj, i) => {
+                      const cardP    = Math.min(1, Math.max(0, (progress - 0.45 - i * 0.05) / 0.4));
+                      const cardEase = 1 - Math.pow(1 - cardP, 3);
+                      return (
+                        <button
+                          key={proj.id}
+                          className="pf-card"
+                          style={{
+                            '--fc': proj.color,
+                            opacity: cardEase,
+                            transform: `translateY(${(1 - cardEase) * 24}px) scale(${0.94 + cardEase * 0.06})`,
+                          }}
+                          onClick={(e) => openProject(e, proj)}
+                        >
+                          <FolderSVG color={proj.color} isOpen={false} />
+                          <span className="pf-card-name">{proj.name}</span>
+                          {proj.type && <span className="pf-card-type">{proj.type}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Status bar, like Finder */}
+              <div className="pf-statusbar">
+                {tr('projects.itemsLabel', 'Items')}: {itemCount}
               </div>
             </div>
           </div>
 
-          <div className="pf-statusbar">
-            {visibleProjects.length} item{visibleProjects.length !== 1 ? 's' : ''}
-          </div>
-        </div>
         </div>
       </section>
 
-      {openProject && (
-        <MacDialog project={openProject} onClose={() => setOpenId(null)} />
+      {opening && (
+        <div
+          className="pf-open-overlay"
+          aria-hidden="true"
+          style={{
+            background: opening.color,
+            clipPath: expanded
+              ? `circle(150% at ${opening.x}px ${opening.y}px)`
+              : `circle(0px at ${opening.x}px ${opening.y}px)`,
+          }}
+        />
       )}
     </>
   );

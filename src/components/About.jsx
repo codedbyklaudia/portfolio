@@ -51,7 +51,8 @@ function TiltPhoto({ children }) {
   const ref = useRef(null);
 
   const handleMove = e => {
-    if (typeof document !== 'undefined' && document.documentElement.getAttribute('data-reduce-motion') === 'true') return;
+    // Skip the tilt for visitors whose device is set to reduce motion
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -75,13 +76,7 @@ function TiltPhoto({ children }) {
   );
 }
 
-const SKILL_META = [
-  { num: '01', color: '#8e6cce', app: 'ide',    list: ['Java · XML', 'Retrofit · DataStore', 'Socket.io', 'Swift (iOS) in progress'] },
-  { num: '02', color: '#3A7A6A', app: 'vscode', list: ['React · TypeScript', 'SCSS/CSS · JavaScript', 'Accessibility · HTML'] },
-  { num: '03', color: '#C95B2A', app: 'code',   list: ['Node.js · Express', 'PostgreSQL · MongoDB', 'REST APIs · PHP'] },
-  { num: '04', color: '#C8952A', app: 'design', list: ['Adobe', 'UI/UX · Figma', 'Canva'] },
-];
-const NOTE_IDS = ['story', 'life', 'skills', 'facts'];
+const NOTE_IDS = ['story', 'life', 'facts'];
 
 export default function About() {
   const { t } = useLanguage();
@@ -90,18 +85,14 @@ export default function About() {
       const preset = sessionStorage.getItem('cbk-about-tab');
       if (preset) {
         sessionStorage.removeItem('cbk-about-tab');
-        return preset;
+        // Ignore old saved values for tabs that no longer exist
+        if (NOTE_IDS.includes(preset)) return preset;
       }
     }
     return 'story';
   });
 
   const notes = NOTE_IDS.map(id => ({ id, label: t(`about.notes.${id}`) }));
-
-  const skills = SKILL_META.map(meta => ({
-    ...meta,
-    name: t(`skills.chapters.${meta.app}.name`),
-  }));
 
   return (
     <section id="about" className="about-section">
@@ -184,7 +175,7 @@ export default function About() {
                 </div>
               )}
 
-            
+
               {activeNote === 'life' && (
                 <div className="about-story" key="life">
                   <div className="about-block about-block--img-right">
@@ -206,32 +197,6 @@ export default function About() {
                         <span className="about-img-tag">{t('about.life.imgTag')}</span>
                       </TiltPhoto>
                     </Reveal>
-                  </div>
-                </div>
-              )}
-
-              {/* Skills */}
-              {activeNote === 'skills' && (
-                <div className="about-notes-page" key="skills">
-                  <Reveal>
-                    <h3 className="about-block-title">
-                      {t('skills.headingPart1')} {t('skills.headingPart2')}
-                    </h3>
-                  </Reveal>
-
-                  <div className="an-skill-cv-list">
-                    {skills.map((s, i) => (
-                      <Reveal delay={80 + i * 60} key={s.app}>
-                        <div className="an-skill-group" style={{ '--cv-accent': s.color }}>
-                          <h4 className="an-skill-group-title">{s.name}</h4>
-                          <div className="an-skill-cv-tags">
-                            {s.list.map(item => (
-                              <span className="an-skill-cv-tag" key={item}>{item}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </Reveal>
-                    ))}
                   </div>
                 </div>
               )}

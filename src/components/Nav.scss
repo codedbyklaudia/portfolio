@@ -4,11 +4,11 @@
   position: fixed;
   top: 0; left: 0; right: 0;
   z-index: 200;
-  height: 50px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 18px;
+  padding: 0 24px;
   @include glass(rgba(249, 249, 249, 0.88), 50px);
   border-bottom: 1px solid rgba(0,0,0,0.07);
   box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset;
@@ -31,14 +31,14 @@
 .nb-logo {
   display: flex;
   align-items: center;
-  margin-right: 16px;
+  margin-right: 24px;
   opacity: 1;
   transition: opacity 0.2s;
   text-decoration: none;
 }
 .nb-logo:hover { opacity: 1; }
 .nb-logo-img {
-  height: 22px;
+  height: 30px;
   width: auto;
   display: block;
 }
@@ -46,17 +46,17 @@
 .nb-menu {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 2px;
 }
 
 .nb-item {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 400;
   color: rgba(26,16,32,0.82);
   text-decoration: none;
-  padding: 2px 10px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 7px;
   transition: background 0.15s, color 0.15s;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -68,11 +68,11 @@
 .nb-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
 }
 
 .nb-icon {
-  width: 14px;
+  width: 18px;
   height: auto;
   color: rgba(26,16,32,0.75);
   flex-shrink: 0;
@@ -80,7 +80,7 @@
 
 .nb-clock {
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   color: rgba(26,16,32,0.8);
   letter-spacing: 0.01em;
@@ -89,14 +89,16 @@
 
 .nb-cta {
   @include pill-button(var(--black), #fff);
-  font-size: 11.5px;
-  padding: 3px 12px;
+  font-size: 14px;
+  padding: 7px 18px;
   text-decoration: none;
   white-space: nowrap;
 }
 .nb-cta:hover { background: #3A2060; }
 
 @include respond($bp-sm) {
+  .nav { height: 56px; padding: 0 16px; }
+  .nb-logo-img { height: 26px; }
   .nb-menu .nb-item:not(.nb-item--bold) { display: none; }
   .nb-icon { display: none; }
   .nb-clock { display: none; }

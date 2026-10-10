@@ -1,0 +1,46 @@
+// "Built with" window on the project pages.
+// The window itself (.sw-window, .sw-inner, .sw-bar, .sw-grid, .sw-tile ...)
+// comes from SkillsWindow.scss, so it matches the Toolbox on the desktop.
+
+.stk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(20, 20, 24, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: stkFade 0.2s ease;
+}
+@keyframes stkFade { from { opacity: 0; } to { opacity: 1; } }
+
+.stk-window {
+  pointer-events: auto;
+  width: min(520px, 100%);
+}
+
+// The traffic lights sit in a row, like in the Toolbox
+.sw-dots {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// Letter shown when a tool has no icon
+.stk-badge {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #e6e6ea;
+  color: rgba(0, 0, 0, 0.55);
+  font-family: var(--font-body);
+  font-weight: 700;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stk-overlay { animation: none; }
+}

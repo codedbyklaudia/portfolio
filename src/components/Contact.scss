@@ -1,499 +1,450 @@
 @use '../styles' as *;
 
-.contact-wrap {
+$ct-accent: #4A7FB5;
+$ct-error: #C93A3A;
+$ct-chrome: #f5f5f7; // window title bar and toolbar
+
+.ct {
   background: var(--bg);
+  color: var(--black);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: clamp(96px, 14vh, 160px) 40px;
 }
 
-/* One section, one heading, one composition — not two overlapping
-   full-screen blocks fighting for the same space. */
-.contact-form-panel {
-  position: relative;
-  border-top: 2px solid var(--border, #222);
-  min-height: 100vh;
-  background: transparent;
-  --text-h: #1A1428;
-  display: flex;
-  align-items: center;
-}
-
-/* Grid instead of the old flex+space-between — gives predictable,
-   intentional proportions (heading column vs. mail-card column)
-   instead of letting the two sides drift apart across a wide
-   edge-to-edge 200px padding, which read as disconnected. */
-.contact-layout {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 56px;
-  width: 100%;
-  max-width: 980px;
+.ct__inner {
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 100px 40px;
-}
-
-.contact-left {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(48px, 7vw, 100px);
   align-items: center;
-  text-align: center;
-  gap: 22px;
 }
 
-.contact-h2 {
+/* Fade in once, staggered: intro first, then the window */
+.ct__intro,
+.ct__panel {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ct__panel { transition-delay: 0.12s; }
+.ct--in .ct__intro,
+.ct--in .ct__panel {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Left ── */
+.ct__title {
+  margin: 0 0 24px;
+  text-wrap: balance;
   font-family: var(--font-display);
   font-weight: 400;
-  line-height: 0.98;
+  font-size: calc(clamp(44px, 5.6vw, 88px) * var(--font-scale, 1));
+  line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--text-h);
-  margin: 0;
-  font-size: calc(clamp(56px, 6.5vw, 108px) * var(--font-scale, 1));
-  transition: font-size 0.3s ease;
 }
-/* Closed-state heading — big, hero-scale, the whole point of this
-   screen before anything's been clicked. */
-.contact-h2--hero {
-  font-size: calc(clamp(64px, 9vw, 128px) * var(--font-scale, 1));
-}
-
-.contact-h2-word {
-  color: #4A7FB5;
-  display: inline-block;
-}
-
-.contact-tagline {
+.ct__accent { color: $ct-accent; }
+.ct__tagline {
+  max-width: 440px;
+  margin: 0 0 40px;
   font-family: var(--font-body);
-  font-size: 21px;
-  font-weight: 400;
+  font-size: 17px;
   line-height: 1.6;
-  color: color-mix(in srgb, var(--text-h) 62%, transparent);
-  max-width: 560px;
-  margin: 6px auto 0;
+  color: rgba(0, 0, 0, 0.55);
 }
 
-/* ── Closed (hero) state ──
-   Full-screen title, email/phone shown as real readable links (not
-   just icon-only), dock below. This is the resting state before the
-   email icon (or the email address itself) is clicked. */
-.contact-hero {
-  position: relative;
-  z-index: 1;
+.ct__direct {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 32px;
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 80px 40px;
+  align-items: flex-start;
+  gap: 26px;
 }
 
-.contact-hero-contacts {
+.ct__contacts {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  font-family: var(--font-mono);
-  font-size: 15px;
-}
-.contact-hero-email,
-.contact-hero-phone {
-  color: var(--text-h);
-  text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s ease, color 0.2s ease;
-}
-.contact-hero-email:hover,
-.contact-hero-phone:hover {
-  color: var(--accent-vivid);
-  border-color: var(--accent-vivid);
-}
-.contact-hero-divider {
-  color: color-mix(in srgb, var(--text-h) 30%, transparent);
+  flex-wrap: wrap;
+  gap: 14px 28px;
 }
 
-/* ── Reveal entrance ──
-   Same simple fade-up used both when the form opens and when it
-   closes back to the hero view — one shared animation, one
-   direction of motion, so opening and closing feel like mirrors of
-   each other rather than two different effects. */
-@keyframes contactFormReveal {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.contact-form-panel--active .contact-layout,
-.contact-hero {
-  animation: contactFormReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-/* Right side — the mail window + dock */
-.contact-right {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 22px;
-}
-
-.mac-mail {
-  width: min(920px, 92vw);
-  background: #FFFFFF;
-  border-radius: 18px;
-  overflow: visible;
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.05),
-    0 40px 80px rgba(29,15,64,0.18),
-    0 10px 24px rgba(29,15,64,0.08);
-  position: relative;
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-.mac-mail:hover {
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.06),
-    0 48px 96px rgba(29,15,64,0.22),
-    0 14px 30px rgba(29,15,64,0.1);
-  transform: translateY(-2px);
-}
-
-.mm-titlebar {
-  background: #F5F3FA;
-  padding: 16px 22px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  border-radius: 18px 18px 0 0;
-}
-
-.mm-dots { display: flex; gap: 8px; flex-shrink: 0; }
-.mm-dot {
-  width: 13px; height: 13px; border-radius: 50%;
-  border: none; padding: 0;
-  display: block;
-}
-.mm-dot--red {
-  cursor: pointer;
-  transition: filter 0.15s ease, transform 0.1s ease;
-}
-.mm-dot--red:hover { filter: brightness(0.85); }
-.mm-dot--red:active { transform: scale(0.9); }
-.mm-dot--red    { @include traffic-dot($mac-red); }
-.mm-dot--yellow { @include traffic-dot($mac-yellow); }
-.mm-dot--green  { @include traffic-dot($mac-green); }
-
-.mm-title {
-  flex: 1; text-align: center;
-  font-family: var(--font-body);
-  font-size: 14px; font-weight: 500;
-  color: rgba(26,20,40,0.55);
-}
-
-.mm-action-btn {
-  background: none; border: none;
-  color: rgba(26,20,40,0.35);
-  font-size: 13px; cursor: pointer;
-  padding: 2px 6px; border-radius: 4px;
-  transition: background 0.2s;
-}
-.mm-action-btn:hover { background: rgba(124,58,237,0.08); }
-
-.mm-form { display: flex; flex-direction: column; }
-
-/* Fields get a left accent bar + faint tint on focus-within, instead
-   of relying purely on the browser's default outline — makes it much
-   clearer which field is active, and reads as more deliberately
-   designed than a plain bordered-row list. */
-.mm-field {
-  display: flex; align-items: center;
-  padding: 14px 22px;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  border-left: 2px solid transparent;
-  gap: 14px;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-.mm-field:focus-within {
-  background: rgba(124,58,237,0.045);
-  border-left-color: var(--accent-vivid);
-}
-.mm-field--error {
-  border-left-color: #E24C4C;
-  background: rgba(226,76,76,0.05);
-}
-
-.mm-error-text {
-  font-family: var(--font-body);
-  font-size: 12.5px;
-  color: #C93A3A;
-  padding: 6px 22px 0;
-  margin: 0;
-}
-.mm-error-text--attachment { padding-top: 8px; }
-.mm-error-text--body { padding: 8px 22px 0; }
-
-.mm-send-error {
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: #C93A3A;
-  background: rgba(226,76,76,0.08);
-  border: 1px solid rgba(226,76,76,0.2);
-  border-radius: 8px;
-  margin: 4px 22px 0;
-  padding: 10px 14px;
-}
-
-.mm-label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: rgba(26,20,40,0.32);
-  width: 56px; flex-shrink: 0;
-}
-
-.mm-input {
-  flex: 1; background: none; border: none; outline: none;
-  font-family: var(--font-body);
-  @include scaled-font(16px);
-  font-weight: 400;
-  color: rgba(26,20,40,0.9);
-  caret-color: var(--accent-vivid);
-}
-.mm-input::placeholder { color: rgba(26,20,40,0.25); }
-.mm-input[readonly]    { color: rgba(26,20,40,0.45); }
-
-.mm-attachment {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 22px;
-  background: rgba(124,58,237,0.07);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  font-family: var(--font-mono);
-  font-size: 12px; color: var(--accent-vivid);
-}
-.mm-remove-att {
-  background: none; border: none; color: rgba(26,20,40,0.35);
-  cursor: pointer; font-size: 12px; padding: 2px 4px;
-}
-
-.mm-divider {
-  height: 1px;
-  background: rgba(0,0,0,0.06);
-}
-
-.mm-body {
-  background: none; border: none; outline: none;
-  resize: none; padding: 20px 22px;
-  font-family: var(--font-body);
-  @include scaled-font(16px);
-  font-weight: 400;
-  color: rgba(26,20,40,0.85);
-  line-height: 1.8;
-  caret-color: var(--accent-vivid);
-  min-height: 150px;
-  transition: background 0.2s ease;
-}
-.mm-body::placeholder { color: rgba(26,20,40,0.25); }
-.mm-body:focus { background: rgba(124,58,237,0.03); }
-.mm-body--error { background: rgba(226,76,76,0.05); }
-
-.mm-emoji-picker {
-  position: absolute;
-  bottom: 68px; left: 22px;
-  background: #FFFFFF;
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 12px;
-  padding: 10px;
-  display: flex; gap: 6px; flex-wrap: wrap;
-  width: 200px;
-  box-shadow: 0 12px 32px rgba(29,15,64,0.2);
-  z-index: 20;
-}
-.mm-emoji-btn {
-  background: none; border: none;
-  font-size: 22px; cursor: pointer;
-  width: 36px; height: 36px;
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, transform 0.15s;
-}
-.mm-emoji-btn:hover { background: rgba(124,58,237,0.08); transform: scale(1.08); }
-
-.mm-toolbar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 22px;
-  border-top: 1px solid rgba(0,0,0,0.06);
-  background: #F5F3FA;
-  border-radius: 0 0 18px 18px;
-}
-.mm-toolbar-left { display: flex; gap: 6px; }
-
-/* Proper circular icon buttons instead of plain emoji-on-transparent
-   text — gives the toolbar actual visual weight/affordance instead
-   of looking like floating characters. */
-.mm-tool {
-  background: rgba(0,0,0,0.04);
-  border: none;
-  font-size: 16px; cursor: pointer;
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0.7;
-  transition: opacity 0.2s, background 0.2s, transform 0.2s;
-}
-.mm-tool:hover { opacity: 1; background: rgba(124,58,237,0.1); transform: translateY(-1px); }
-
-.mm-send-btn {
-  @include pill-button(var(--accent-vivid), #fff);
-  padding: 11px 24px;
-  border-radius: 24px;
-  font-size: 14px;
-  font-weight: 600;
-  box-shadow: 0 8px 20px rgba(124,58,237,0.28);
-  transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-.mm-send-btn:hover:not(:disabled) {
-  opacity: 0.92;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(124,58,237,0.36);
-}
-.mm-send-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-.mm-send-arrow { font-size: 16px; }
-
-.mm-spinner {
-  width: 14px; height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.mm-sent {
-  padding: 56px 40px;
-  display: flex; flex-direction: column;
-  align-items: center; gap: 10px; text-align: center;
-}
-.mm-sent-icon  { font-size: 40px; }
-.mm-sent-title { font-family: var(--font-display); font-size: 26px; color: #1A1428; }
-.mm-sent-sub   { font-family: var(--font-body); font-size: 15px; color: rgba(26,20,40,0.45); }
-.mm-new-btn {
-  margin-top: 12px;
-  background: none; border: 1px solid rgba(0,0,0,0.12);
-  color: rgba(26,20,40,0.5);
-  @include mono-label(11px, 0.15em);
-  padding: 10px 20px; cursor: pointer; border-radius: 4px;
-  transition: border-color 0.2s, color 0.2s;
-}
-.mm-new-btn:hover { border-color: var(--accent-vivid); color: var(--accent-vivid); }
-
-/* Dock — icon links below the mail window. Pushed down 5rem from
-   whatever sits above it (mail card in the open state, email/phone
-   line in the hero state) for real breathing room instead of sitting
-   right up against it. */
-.contact-dock {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  margin-top: 5rem;
-  @include glass(rgba(0,0,0,0.04), 16px);
-  border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 22px;
-  box-shadow: 0 16px 36px rgba(0,0,0,0.12);
-}
-.contact-dock-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 13px;
-  @include flex-center;
-  background: var(--dock-color, var(--border));
-  text-decoration: none;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
-  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
-}
-.contact-dock-icon:hover {
-  transform: translateY(-5px) scale(1.08);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.15);
-}
-.contact-dock-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 9px;
-}
-.contact-dock-fallback {
+.ct__email {
   font-family: var(--font-body);
   font-size: 18px;
-  font-weight: 700;
-  color: #fff;
+  color: inherit;
+  text-decoration: none;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    color: $ct-accent;
+    border-color: $ct-accent;
+  }
 }
 
-/* ── Availability badge ── */
-.contact-hero-badge {
-  display: inline-flex;
+/* Social icons */
+.ct__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ct__social {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.65);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    background: var(--black);
+    border-color: var(--black);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+  &:focus-visible {
+    outline: 2px solid $ct-accent;
+    outline-offset: 3px;
+  }
+}
+
+/* ── Mac mail window ── */
+.ct__mail {
+  position: relative;
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.05),
+    0 40px 80px rgba(20, 24, 40, 0.14),
+    0 10px 24px rgba(20, 24, 40, 0.06);
+}
+
+.ct__mail-bar {
+  display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 12px;
+  padding: 14px 18px;
+  background: $ct-chrome;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px 16px 0 0;
+}
+.ct__dots {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.ct__dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0, 0, 0, 0.1);
+
+  &--r { background: #ff5f57; }
+  &--y { background: #febc2e; }
+  &--g { background: #28c840; }
+}
+.ct__mail-title {
+  flex: 1;
+  margin-right: 52px; // balances the dots so the title stays centred
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.ct__form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* To / From / Subject rows */
+.ct__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  border-left: 2px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease;
+
+  label {
+    width: 56px;
+    flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.32);
+  }
+
+  &:focus-within {
+    background: rgba(74, 127, 181, 0.05);
+    border-left-color: $ct-accent;
+  }
+
+  &--error,
+  &--error:focus-within {
+    background: rgba(226, 76, 76, 0.05);
+    border-left-color: $ct-error;
+  }
+}
+
+.ct__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.88);
+  caret-color: $ct-accent;
+
+  &::placeholder { color: rgba(0, 0, 0, 0.25); }
+  &[readonly] { color: rgba(0, 0, 0, 0.45); }
+}
+
+.ct__error {
+  margin: 0;
+  padding: 6px 20px 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: $ct-error;
+}
+
+/* Attachment bar */
+.ct__att {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: rgba(74, 127, 181, 0.07);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   font-family: var(--font-mono);
   font-size: 12px;
+  color: $ct-accent;
+
+  button {
+    padding: 2px 4px;
+    border: 0;
+    background: none;
+    font-size: 12px;
+    color: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+}
+
+/* Message body */
+.ct__body {
+  width: 100%;
+  min-height: 170px;
+  padding: 18px 20px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  color: rgba(0, 0, 0, 0.85);
+  caret-color: $ct-accent;
+  transition: background 0.2s ease;
+
+  &::placeholder { color: rgba(0, 0, 0, 0.25); }
+  &:focus { background: rgba(74, 127, 181, 0.03); }
+  &--error { background: rgba(226, 76, 76, 0.05); }
+}
+
+.ct__fail {
+  margin: 4px 20px 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(226, 76, 76, 0.2);
+  border-radius: 8px;
+  background: rgba(226, 76, 76, 0.08);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: $ct-error;
+
+  a { color: inherit; }
+}
+
+/* Emoji picker */
+.ct__emojis {
+  position: absolute;
+  bottom: 68px;
+  left: 20px;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 200px;
+  padding: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(20, 24, 40, 0.18);
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: none;
+    font-size: 22px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+
+    &:hover {
+      background: rgba(74, 127, 181, 0.1);
+      transform: scale(1.08);
+    }
+  }
+}
+
+/* Toolbar */
+.ct__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 0 0 16px 16px;
+  background: $ct-chrome;
+}
+.ct__tools {
+  display: flex;
+  gap: 6px;
+}
+.ct__tool {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.04);
+  font-size: 16px;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(74, 127, 181, 0.12);
+    transform: translateY(-1px);
+  }
+}
+
+.ct__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 112px;
+  padding: 11px 24px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--black);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  color: color-mix(in srgb, var(--text-h) 65%, transparent);
-  background: color-mix(in srgb, var(--pp-surface, #F1EFE7) 100%, transparent);
-  border: 1px solid rgba(0,0,0,0.08);
-  padding: 8px 16px 8px 12px;
-  border-radius: 20px;
-}
-.contact-hero-pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4CAF7D;
-  box-shadow: 0 0 0 rgba(76,175,125,0.5);
-  animation: contactPulse 2s infinite;
-}
-@keyframes contactPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(76,175,125,0.45); }
-  70%  { box-shadow: 0 0 0 8px rgba(76,175,125,0); }
-  100% { box-shadow: 0 0 0 0 rgba(76,175,125,0); }
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+
+  &:hover:not(:disabled) { transform: translateY(-2px); }
+  &:focus-visible {
+    outline: 2px solid $ct-accent;
+    outline-offset: 3px;
+  }
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
 }
 
-/* ── Decorative background blobs ──
-   Same soft, low-opacity glow treatment ProjectPage's hero already
-   uses (.pp-hero-float) — ties this section into the same visual
-   language instead of sitting on a completely flat background. */
-.contact-hero-bg {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-.contact-hero-blob {
-  position: absolute;
+.ct__spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
   border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.16;
+  animation: ctSpin 0.7s linear infinite;
 }
-.contact-hero-blob--1 {
-  width: 420px; height: 420px;
-  top: 8%; left: 8%;
-  background: var(--accent-vivid);
-}
-.contact-hero-blob--2 {
-  width: 380px; height: 380px;
-  bottom: 6%; right: 10%;
-  background: #4A7FB5;
-  opacity: 0.12;
-}
+@keyframes ctSpin { to { transform: rotate(360deg); } }
 
+/* Sent state */
+.ct__done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 32px;
+  text-align: center;
+
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+  }
+  p {
+    margin: 0;
+    max-width: 340px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(0, 0, 0, 0.5);
+  }
+}
+.ct__done-icon { font-size: 38px; }
+.ct__new {
+  margin-top: 12px;
+  padding: 10px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    border-color: $ct-accent;
+    color: $ct-accent;
+  }
+}
 
 @include respond($bp-md) {
-  .contact-layout { padding: 56px 24px; gap: 40px; }
-  .contact-tagline { max-width: 100%; }
+  .ct { padding: 80px 24px; }
+  .ct__inner { grid-template-columns: 1fr; gap: 56px; }
+  .ct__title { margin-bottom: 20px; }
+  .ct__tagline { margin-bottom: 32px; }
+  .ct__row label { width: 48px; }
+}
 
-  .contact-hero { padding: 64px 24px; gap: 28px; }
-  .contact-h2--hero { font-size: clamp(40px, 14vw, 72px); }
-  .contact-hero-contacts { flex-wrap: wrap; justify-content: center; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) {
+  .ct__intro,
+  .ct__panel {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+  .ct__spinner { animation: none; }
 }

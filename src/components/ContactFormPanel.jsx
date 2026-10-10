@@ -209,7 +209,7 @@ export default function ContactFormPanel() {
             <span className="contact-hero-divider">·</span>
             <a href={PHONE_HREF} className="contact-hero-phone">{PHONE_DISPLAY}</a>
           </div>
-          <p>Looking for form? Click on email :)</p>
+          <p>Looking for form? Click on email.</p>
 
           {renderDock()}
         </div>

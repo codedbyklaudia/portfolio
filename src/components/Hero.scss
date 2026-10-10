@@ -1,5 +1,12 @@
 @use '../styles' as *;
 
+// Palette shared with Loader.scss so the loading screen and lock screen match
+$lh-login-ink: #1d1a18;
+$lh-haze: #dfdcd8;
+$lh-ash: #b9b5b2;
+$lh-blush: #d8c7bd;
+$lh-steel: #8f9aae;
+
 /* ── Section ── */
 .lh-section {
   height: 400vh;
@@ -282,53 +289,60 @@
   z-index: 3;
   will-change: opacity, transform;
   transform-origin: 50% 50%;
-  color: #fff;
+  color: $lh-login-ink;
 }
 
-/* Wallpaper — swap the background-image URL below for a real photo
-   (e.g. /images/login-wallpaper.jpg) once you've got one; the
-   gradient + blobs are just a placeholder so this doesn't depend on
-   an asset to ship. A dark overlay sits on top either way so the
-   white text/menu-bar stays legible over a busy photo. */
+/* Wallpaper — identical to the loading screen (Loader.scss), so the
+   hand-off from loader to lock screen is seamless. To use a real photo
+   instead, swap the background below for:
+     linear-gradient(180deg, rgba(255,255,255,0.15), rgba(29,26,24,0.25)),
+     url('/images/background.png') center / cover */
 .lh-login-wallpaper {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  // background:
-  //   linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.4) 100%),
-  //   radial-gradient(120% 90% at 20% 15%, #3A2B1E 0%, transparent 60%),
-  //   radial-gradient(120% 90% at 80% 85%, #2E3B4A 0%, transparent 60%),
-    // linear-gradient(160deg, #23180F 0%, #1C1611 55%, #120D08 100%);
-  // Uncomment and point at a real photo to replace the gradient wallpaper:
-  background-image:
-    linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.4) 100%),
-    url('/images/background.png');
-  background-size: cover;
-  background-position: center;
+  background:
+    radial-gradient(60% 50% at 25% 35%, rgba($lh-blush, 0.85), transparent 70%),
+    radial-gradient(50% 50% at 85% 80%, rgba($lh-steel, 0.55), transparent 70%),
+    linear-gradient(160deg, #e6e3e0, $lh-ash);
 }
 
+// Same grain as the loader
+.lh-login-wallpaper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+
+// Slow drifting glows in the same palette, kept faint so the base colour stays the same
 .lh-login-wallpaper-blob {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
-  opacity: 0.22;
   will-change: transform;
 }
 .lh-login-wallpaper-blob--1 {
   width: 46vw; height: 46vw;
-  background: #B5723F;
+  background: $lh-blush;
+  opacity: 0.35;
   top: -12%; left: -8%;
   animation: blobDrift1 20s ease-in-out infinite;
 }
 .lh-login-wallpaper-blob--2 {
   width: 38vw; height: 38vw;
-  background: #4A7FB5;
+  background: $lh-steel;
+  opacity: 0.25;
   bottom: -14%; right: -6%;
   animation: blobDrift2 24s ease-in-out infinite;
 }
 .lh-login-wallpaper-blob--3 {
   width: 26vw; height: 26vw;
-  background: #6B4A2A;
+  background: #ffffff;
+  opacity: 0.25;
   top: 34%; right: 22%;
   animation: blobDrift3 26s ease-in-out infinite;
 }
@@ -359,20 +373,20 @@
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: rgba(255,255,255,0.85);
+  color: rgba($lh-login-ink, 0.75);
 }
 .lh-login-topbar-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255,255,255,0.85);
+  color: rgba($lh-login-ink, 0.75);
   font-size: 13px;
   line-height: 1;
 }
 .lh-login-topbar-icon--battery {
   width: 22px;
   height: 11px;
-  border: 1.3px solid rgba(255,255,255,0.75);
+  border: 1.3px solid rgba($lh-login-ink, 0.65);
   border-radius: 3px;
   padding: 1.5px;
   position: relative;
@@ -386,14 +400,14 @@
   transform: translateY(-50%);
   width: 2px;
   height: 4px;
-  background: rgba(255,255,255,0.75);
+  background: rgba($lh-login-ink, 0.65);
   border-radius: 0 1px 1px 0;
 }
 .lh-login-battery-fill {
   display: block;
   width: 78%;
   height: 100%;
-  background: rgba(255,255,255,0.85);
+  background: rgba($lh-login-ink, 0.75);
   border-radius: 1px;
 }
 .lh-login-topbar-icon--power {
@@ -421,20 +435,73 @@
 }
 
 .lh-login-date {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: clamp(15px, 1.6vw, 20px);
-  color: rgba(255,255,255,0.85);
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(17px, 1.8vw, 24px);
+  color: rgba($lh-login-ink, 0.7);
 }
 
 .lh-login-time {
-  font-family: var(--font-body);
-  font-weight: 200;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-weight: 400;
   font-size: clamp(64px, 11vw, 140px);
   line-height: 1;
-  color: #fff;
+  color: $lh-login-ink;
   letter-spacing: -0.02em;
-  text-shadow: 0 4px 30px rgba(0,0,0,0.35);
+  text-shadow: 0 2px 28px rgba(255, 255, 255, 0.55);
+}
+
+/* Dictionary entry — sits in the middle of the lock screen */
+.lh-login-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 760px;
+  animation: lhLoginEntryIn 1.2s ease 0.5s both;
+}
+
+.lh-login-headword {
+  margin: 0;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(40px, 7vw, 104px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: $lh-login-ink;
+}
+
+.lh-login-pron {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  margin: 0;
+  font-family: var(--font-decor-alt);
+  font-size: 18px;
+  color: rgba($lh-login-ink, 0.6);
+
+  em {
+    font-size: 19px;
+    font-style: italic;
+  }
+}
+
+.lh-login-def {
+  margin: 4px 0 0;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-size: clamp(18px, 2vw, 26px);
+  line-height: 1.5;
+  color: rgba($lh-login-ink, 0.78);
+}
+
+@keyframes lhLoginEntryIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* Avatar + name + login field group — pinned to the very bottom of
@@ -446,29 +513,31 @@
   gap: 8px;
 }
 
+// Bigger, with padding and object-fit: contain so the whole logo shows
 .lh-login-avatar {
-  width: 100px;
-  height: 100px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background:  #ffffff;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.14);
+  padding: 11px;
+  background: #ffffff;
+  box-shadow: 0 14px 36px rgba($lh-login-ink, 0.22), 0 0 0 4px rgba(255, 255, 255, 0.55);
   margin-bottom: 4px;
 }
 .lh-login-avatar img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .lh-login-name {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 16px;
-  color: #fff;
+  color: $lh-login-ink;
   margin-bottom: 6px;
 }
 
@@ -483,11 +552,11 @@
   height: 36px;
   padding: 0 18px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background: rgba(0,0,0,0.25);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba($lh-login-ink, 0.14);
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: $lh-login-ink;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
@@ -496,8 +565,8 @@
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .lh-login-scroll-pill:hover {
-  background: rgba(0,0,0,0.35);
-  border-color: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.65);
+  border-color: rgba($lh-login-ink, 0.28);
   transform: translateY(-1px);
 }
 .lh-login-scroll-pill-arrow {
@@ -874,11 +943,51 @@
   right: 72px;
   transform: translateY(-50%);
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 44px;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.lh-reveal-col {
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 28px;
-  pointer-events: auto;
-  will-change: transform;
+}
+
+/* ── Draggable desktop items ── */
+.lh-draggable {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: filter 0.2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .lh-widget-card.lh-draggable { cursor: grab; }
+}
+.lh-draggable--dragging {
+  z-index: 30;
+  cursor: grabbing !important;
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.18));
+}
+// Lift the whole group above its neighbours while one of its items is dragged
+.lh-reveal-topleft:has(.lh-draggable--dragging),
+.lh-reveal-folders:has(.lh-draggable--dragging) {
+  z-index: 30;
+}
+
+/* ── CV file icon ── */
+a.lh-reveal-folder-btn {
+  text-decoration: none;
+}
+.lh-reveal-file-icon {
+  display: block;
+  width: 66px;
+  height: auto;
+  margin: 6px 0 4px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
 }
 
 .lh-reveal-folder-btn {
@@ -967,7 +1076,8 @@
   .lh-reveal-scene { display: flex; align-items: center; justify-content: center; height: auto; padding: 0 24px; }
   .lh-reveal-topleft { display: none; }
   .lh-reveal-center { display: none; }
-  .lh-reveal-folders { position: static; transform: none; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 20px; }
+  .lh-reveal-folders { position: static; transform: none; flex-direction: column; justify-content: center; gap: 20px; }
+  .lh-reveal-col { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 20px; }
   .lh-folder-grid { grid-template-columns: repeat(2, 64px); gap: 12px 10px; top: 12px; right: 12px; }
   .lh-mini-folder-svg { width: 32px; }
   .lh-mini-folder-label { font-size: 7px; }
@@ -975,6 +1085,10 @@
   .lh-win-body    { padding: 16px 16px 14px; }
   .lh-dock, .lh-hero-dock { display: none; }
   .lh-screen-dock { display: none; }
+
+  .lh-login-headword { font-size: clamp(34px, 11vw, 56px); }
+  .lh-login-def { font-size: 16px; }
+  .lh-login-avatar { width: 76px; height: 76px; padding: 9px; }
 }
 
 /* ── Screen DOM (legacy in-3D screen content, kept for the Projects

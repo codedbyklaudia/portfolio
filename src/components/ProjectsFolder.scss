@@ -1,4 +1,9 @@
 @use '../styles' as *;
+@use './sectionTheme' as theme;
+
+// Sticky note: soft sky blue with navy text
+$note-bg: #c5dbf2;
+$note-ink: #1f3a5c;
 
 /* ── Section wrapper ──
    Pulled up by exactly one viewport height to overlap the tail of the Hero
@@ -10,38 +15,68 @@
   background: var(--bg);
   overflow: hidden;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 32px;
-  padding: 8vh 4vw;
+  padding: 10vh 4vw;
   margin-top: -100vh;
 }
 
-/* ── Sticky note, pinned to the Finder window's top-left corner ── */
+/* Two columns: title on the left, the Finder window on the right */
+.pf-layout {
+  width: min(1760px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
+  gap: clamp(40px, 5vw, 96px);
+  align-items: center;
+}
+
+/* ── Left: title ── */
+.pf-intro {
+  will-change: opacity, transform;
+}
+// Same type settings as the heading in the Contact section
+.pf-title {
+  margin: 0 0 24px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: calc(clamp(44px, 5.6vw, 88px) * var(--font-scale, 1));
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--black);
+}
+.pf-lead {
+  max-width: 440px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+/* ── Right: window + sticky note ── */
 .pf-finder-wrap {
   position: relative;
   z-index: 1;
 }
 .pf-sticky-note {
   position: absolute;
-  top: -22px;
-  right: -18px;
+  top: -30px;
+  right: -14px;
   z-index: 2;
-  width: 170px;
+  width: 180px;
   padding: 18px 16px 22px;
-  background: #d7cce7;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08);
+  background: $note-bg;
+  box-shadow: 0 8px 20px rgba(23,35,58,0.12), 0 2px 5px rgba(23,35,58,0.07);
   font-family: var(--font-decor-alt);
   font-style: italic;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.4;
-  color: #3A2B5C;
+  color: $note-ink;
   will-change: opacity, transform;
   pointer-events: none;
 }
-/* Little folded-corner detail, bottom-left, like a real Post-it */
+/* Little folded corner, like a real Post-it */
 .pf-sticky-note::after {
   content: '';
   position: absolute;
@@ -49,131 +84,98 @@
   bottom: 0;
   width: 16px;
   height: 16px;
-  background: linear-gradient(225deg, transparent 50%, rgba(0,0,0,0.08) 50%);
+  background: linear-gradient(225deg, transparent 50%, rgba(23,35,58,0.1) 50%);
 }
 
 /* ── Finder window ── */
 .pf-finder {
   position: relative;
-  z-index: 1;
-  width: min(1100px, 92vw);
-  height: min(680px, 82vh);
-  background: rgba(246,246,248,0.96);
+  width: 100%;
+  min-height: clamp(520px, 56vh, 780px);
+  background: #fff;
   border-radius: 14px;
-  box-shadow:
-    0 60px 120px rgba(0,0,0,0.4),
-    0 8px 24px rgba(0,0,0,0.2),
-    inset 0 1px 0 rgba(255,255,255,0.6);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 30px 80px rgba(23,35,58,0.14), 0 4px 14px rgba(23,35,58,0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   will-change: opacity, transform;
   /* opacity/transform are driven every frame by ProjectsFolder.jsx's own
-     scroll-progress reveal (see the `finderEase` calc there) rather than
-     a fixed on-mount keyframe — this window rises into place in sync
-     with Hero fading away above it, and reverses cleanly on scroll-up. */
+     scroll-progress reveal (the `finderEase` calc there), so the window
+     rises into place as the hero fades away, and reverses on scroll-up. */
 }
 
-/* Title bar with traffic lights */
+/* Title bar: traffic lights, back/forward, centred title */
 .pf-titlebar {
-  height: 40px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  padding: 0 14px;
-  gap: 12px;
-  background: rgba(255,255,255,0.7);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-}
-.pf-traffic { display: flex; gap: 8px; }
-.pf-dot { width: 12px; height: 12px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.1); }
-.pf-dot--r { @include traffic-dot($mac-red); }
-.pf-dot--y { @include traffic-dot($mac-yellow); }
-.pf-dot--g { @include traffic-dot($mac-green); }
-.pf-titlebar-title {
-  flex: 1;
-  text-align: center;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(0,0,0,0.6);
-  margin-right: 60px; /* balances the traffic-light width so text is visually centered */
-}
-
-/* Toolbar: back/forward, breadcrumb, search */
-.pf-toolbar {
   height: 52px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  padding: 0 18px;
   gap: 16px;
-  padding: 0 16px;
-  background: rgba(250,250,250,0.85);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(180deg, #fbfbfc, #f3f3f5);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
 }
-.pf-nav-btns { display: flex; gap: 4px; }
+.pf-traffic { display: flex; gap: 8px; }
+.pf-dot {
+  display: block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 0.5px solid rgba(0,0,0,0.12);
+}
+.pf-dot--r { @include traffic-dot($mac-red); }
+.pf-dot--y { @include traffic-dot($mac-yellow); }
+.pf-dot--g { @include traffic-dot($mac-green); }
+
+.pf-nav-btns {
+  display: flex;
+  gap: 2px;
+}
 .pf-nav-btn {
-  width: 26px; height: 26px;
+  width: 26px;
+  height: 24px;
+  display: grid;
+  place-items: center;
   border-radius: 6px;
-  border: none;
-  background: rgba(0,0,0,0.05);
-  color: rgba(0,0,0,0.35);
-  font-size: 15px;
-  cursor: default;
+  font-size: 18px;
+  line-height: 1;
+  color: rgba(0,0,0,0.3);
 }
-.pf-breadcrumb {
+
+.pf-titlebar-title {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
   font-family: var(--font-body);
-  font-size: 13px;
-  color: rgba(0,0,0,0.55);
-  background: rgba(0,0,0,0.04);
-  padding: 5px 12px;
-  border-radius: 7px;
-  max-width: 320px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.65);
+  margin-right: 118px; /* balances the left controls so the title looks centred */
 }
-.pf-breadcrumb-icon { font-size: 13px; }
-.pf-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: rgba(0,0,0,0.35);
-  background: rgba(0,0,0,0.04);
-  padding: 5px 12px;
-  border-radius: 7px;
-  width: 160px;
-}
-.pf-search-placeholder { opacity: 0.7; }
+.pf-titlebar-icon { font-size: 14px; }
 
 /* Body: sidebar + grid */
 .pf-body {
   flex: 1;
   display: flex;
-  overflow: hidden;
 }
 
 .pf-sidebar {
-  width: 200px;
+  width: 210px;
   flex-shrink: 0;
-  background: rgba(240,240,242,0.7);
+  background: rgba(244,244,246,0.9);
   border-right: 1px solid rgba(0,0,0,0.06);
-  padding: 18px 12px;
-  overflow-y: auto;
+  padding: 22px 12px;
 }
 .pf-sidebar-label {
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  color: rgba(0,0,0,0.35);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 14px 8px 6px;
+  color: rgba(0,0,0,0.38);
+  margin: 0 8px 10px;
 }
-.pf-sidebar-label:first-child { margin-top: 0; }
 .pf-sidebar-item {
   width: 100%;
   display: flex;
@@ -182,17 +184,28 @@
   background: none;
   border: none;
   text-align: left;
-  padding: 7px 8px;
-  border-radius: 6px;
+  padding: 9px 10px;
+  border-radius: 7px;
   font-family: var(--font-body);
-  font-size: 13px;
-  color: rgba(0,0,0,0.7);
+  font-size: 14px;
+  color: rgba(0,0,0,0.72);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.pf-sidebar-item:hover { background: rgba(0,0,0,0.04); }
+// Hovering a tab: soft blue and dark text (the selected tab is excluded,
+// so it keeps its solid blue while hovered)
+.pf-sidebar-item:hover:not(.pf-sidebar-item--active) {
+  background: rgba(theme.$active, 0.12);
+  color: theme.$ink;
+}
+// Selected tab: same blue as the About section
 .pf-sidebar-item--active {
-  background: var(--purple-mid);
+  background: theme.$active;
   color: #fff;
+}
+.pf-sidebar-item:focus-visible {
+  outline: 2px solid theme.$active;
+  outline-offset: 2px;
 }
 .pf-sidebar-dot {
   width: 6px; height: 6px;
@@ -201,25 +214,19 @@
   opacity: 0.5;
   flex-shrink: 0;
 }
-.pf-sidebar-tags {
-  display: flex;
-  gap: 8px;
-  padding: 6px 8px;
-}
-.pf-tag-dot {
-  width: 12px; height: 12px;
-  border-radius: 3px;
+.pf-sidebar-item--active .pf-sidebar-dot {
+  opacity: 1;
 }
 
 .pf-grid-wrap {
   flex: 1;
-  overflow-y: auto;
-  padding: 28px 32px;
+  min-width: 0;
+  padding: 44px 40px;
 }
 .pf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 32px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 40px 24px;
 }
 
 /* ── Folder card (grid item) ── */
@@ -228,61 +235,62 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  transition: background 0.15s;
-  /* opacity/transform are driven every frame by ProjectsFolder.jsx's own
-     scroll-progress reveal (staggered per-card off the same progress
-     value as .pf-finder) rather than a fixed-delay keyframe on mount. */
+  gap: 10px;
+  /* opacity/transform are driven every frame by ProjectsFolder.jsx's
+     scroll-progress reveal (staggered per card). */
 }
-.pf-card:hover { background: rgba(107,79,160,0.06); }
+.pf-card:focus-visible {
+  outline: 2px solid theme.$active;
+  outline-offset: 2px;
+}
 
 .pf-svg {
   width: 100%;
-  max-width: 96px;
+  max-width: 120px;
   height: auto;
   display: block;
-  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.15));
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.12));
   transition: filter 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1);
 }
 .pf-card:hover .pf-svg {
-  filter: drop-shadow(0 12px 22px rgba(0,0,0,0.22));
-  transform: scale(1.05);
+  filter: drop-shadow(0 12px 18px rgba(0,0,0,0.18));
+  transform: translateY(-4px);
 }
 
 .pf-card-name {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 500;
-  color: var(--ink);
+  color: theme.$ink;
   text-align: center;
   line-height: 1.2;
 }
 .pf-card-type {
   @include mono-label(9px, 0.1em);
-  color: #999;
+  color: rgba(0,0,0,0.4);
+  margin-top: -4px;
 }
 
-/* Status bar */
+/* Status bar, like Finder */
 .pf-statusbar {
-  height: 26px;
+  height: 32px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  justify-content: center;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   color: rgba(0,0,0,0.4);
-  background: rgba(250,250,250,0.85);
+  background: rgba(250,250,251,0.9);
   border-top: 1px solid rgba(0,0,0,0.06);
 }
 
-/* ── "Open Project" transition — expanding circle in the project's
-   own color, growing from the exact click point, before the actual
-   navigate() call fires (see MacDialog's handleOpenProject). ── */
+/* ── Opening a project: a circle in the project's own colour grows from
+   the click point before the project page opens. ── */
 .pf-open-overlay {
   position: fixed;
   inset: 0;
@@ -291,133 +299,27 @@
   transition: clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* ══ Mac "Get Info" dialog — built from the same chrome tokens as the
-   Finder window above (pf-titlebar / pf-toolbar / pf-statusbar). ══ */
-.mac-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.2s ease;
+/* ── Tablet: stack the title above the window ── */
+@include respond($bp-md) {
+  .pf-layout {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .pf-lead { max-width: 520px; }
 }
-@keyframes fadeIn { from {opacity:0} to {opacity:1} }
-
-.mac-win {
-  width: 560px;
-  max-width: 92vw;
-  background: rgba(246,246,248,0.97);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border-radius: 14px;
-  box-shadow:
-    0 40px 100px rgba(0,0,0,0.35),
-    0 6px 20px rgba(0,0,0,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.6);
-  animation: popIn 0.35s cubic-bezier(0.16,1,0.3,1);
-  overflow: hidden;
-}
-@keyframes popIn {
-  from { opacity:0; transform:scale(0.94) translateY(16px); }
-  to   { opacity:1; transform:scale(1) translateY(0); }
-}
-
-/* Toolbar row variant used inside the dialog */
-.mac-toolbar {
-  gap: 12px;
-}
-.mac-type-pill {
-  flex-shrink: 0;
-  @include mono-label(10px, 0.08em, 700);
-  color: rgba(0,0,0,0.45);
-  background: rgba(0,0,0,0.05);
-  padding: 5px 10px;
-  border-radius: 6px;
-}
-
-.mac-body {
-  padding: 22px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.mac-row { display: flex; gap: 20px; align-items: flex-start; }
-.mac-ico { width: 88px; flex-shrink: 0; }
-.mac-ico .pf-svg { width: 88px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.15)); }
-.mac-msg { flex: 1; display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
-
-.mac-tag {
-  font-family: var(--font-geomini);
-  font-size: 18px;
-  font-weight: 300;
-  color: #0d0d0d;
-  line-height: 1.6;
-  font-style: italic;
-}
-.mac-cred {
-  font-family: var(--font-body);
-  font-size: 12px;
-  color: #999;
-}
-.mac-sep { height: 1px; background: rgba(0,0,0,0.06); }
-
-.mac-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.mac-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.045);
-  color: rgba(0,0,0,0.6);
-}
-.mac-chip-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* Status bar variant used as the dialog's action row */
-.mac-statusbar {
-  height: auto;
-  padding: 14px 20px;
-  justify-content: flex-end;
-  gap: 10px;
-  background: rgba(250,250,250,0.9);
-}
-
-.mac-btn {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 8px 20px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.mac-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-.mac-cancel { background: rgba(0,0,0,0.06); color: #555; }
-.mac-ok { color: #fff; font-weight: 600; }
 
 /* ── Mobile ── */
 @include respond($bp-sm) {
-  .pf-section { padding: 6vh 4vw; margin-top: 0; }
+  .pf-section { padding: 8vh 5vw; margin-top: 0; }
   .pf-sticky-note { display: none; }
-  .pf-finder { width: 100%; height: 88vh; }
   .pf-sidebar { display: none; }
-  .pf-search { display: none; }
-  .pf-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 24px 16px; }
-  .mac-type-pill { display: none; }
+  .pf-nav-btns { display: none; }
+  .pf-titlebar-title { margin-right: 52px; }
+  .pf-finder { min-height: 360px; }
+  .pf-grid-wrap { padding: 24px 16px; }
+  .pf-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 24px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-card:hover .pf-svg { transform: none; }
 }

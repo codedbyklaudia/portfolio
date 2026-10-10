@@ -6,305 +6,435 @@
   --pp-ink: #16150F;
   --pp-ink-soft: #706C60;
   --pp-line: rgba(22, 21, 15, 0.1);
+  // One grey colour scheme for every project
+  --pp-grey-card: #ebebed;
+  // Small accents (progress bar, tag dots, numbers, hovers). Each project
+  // keeps its own colour here. For ONE colour everywhere, change this to
+  // a fixed colour, e.g. --pp-accent: #4A7FB5;
+  --pp-accent: var(--proj-color);
   min-height: 100vh;
   background: var(--pp-paper);
   color: var(--pp-ink);
   font-family: var(--font-body);
+  overflow-x: clip; // pictures slide in from the side without adding a scrollbar
 }
 
 .pp-progress { position: fixed; top: 0; left: 0; right: 0; height: 4px; z-index: 200; }
-.pp-progress-bar { height: 100%; width: 100%; background: var(--proj-color); transform-origin: left center; transform: scaleX(0); }
+.pp-progress-bar { height: 100%; width: 100%; background: var(--pp-accent); transform-origin: left center; transform: scaleX(0); }
 
-.pp-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  padding: 24px 48px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+/* ════════════════════════════════════════════
+   SCROLL REVEALS
+   Elements marked data-reveal start slightly off to one side and slide
+   into place when they enter the screen (see the IntersectionObserver in
+   ProjectPage.jsx). They only start hidden once the page has switched on
+   the .pp-js class, so nothing can be stuck invisible.
+   ════════════════════════════════════════════ */
+.pp-js [data-reveal] {
+  opacity: 0;
+  transition:
+    opacity 0.6s ease var(--d, 0s),
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0s);
 }
+.pp-js [data-reveal="left"]  { transform: translateX(-70px); }
+.pp-js [data-reveal="right"] { transform: translateX(70px); }
+.pp-js [data-reveal="up"]    { transform: translateY(26px); }
+.pp-js [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Back button: same look as the hero buttons (white pill) */
 .pp-back {
-  @include mono-label(12px, 0.14em, 700);
-  color: rgba(255,255,255,0.9);
-  background: var(--accent-vivid);
-  padding: 10px 18px;
-  border-radius: 12px;
+  position: fixed;
+  top: 20px;
+  left: 28px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pp-ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 0.2s ease;
 }
-.pp-back:hover { color: #000; background: var(--purple-mid); }
+.pp-back:hover { transform: translateX(-3px); }
+.pp-back:focus-visible {
+  outline: 2px solid var(--pp-ink);
+  outline-offset: 3px;
+}
 
-/* Hero */
+/* ════════════════════════════════════════════
+   HERO: picture left, text right
+   ════════════════════════════════════════════ */
 .pp-hero {
   position: relative;
-  height: 100vh;
-  min-height: 560px;
-  overflow: hidden;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
+  gap: 56px;
+  padding: 120px 5vw 110px;
+  overflow: hidden;
+  color: #fff;
+  border-radius: 0 0 clamp(28px, 4vw, 64px) clamp(28px, 4vw, 64px);
+  background: linear-gradient(160deg, #3d3d44 0%, #222227 50%, #131316 100%);
 }
-
-.pp-hero-bg {
+// Fine grain so the dark background never looks flat
+.pp-hero::after {
+  content: '';
   position: absolute;
   inset: 0;
-  z-index: 0;
+  opacity: 0.1;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
 }
-.pp-hero-bg--clickable {
-  cursor: pointer;
-}
-.pp-hero-bg-img {
+
+.pp-hero-glow {
   position: absolute;
-  top: -5%;
-  left: 0;
+  border-radius: 50%;
+  filter: blur(110px);
+  background: #fff;
+  pointer-events: none;
+}
+.pp-hero-glow--1 { width: 520px; height: 520px; top: -14%; left: -8%; opacity: 0.1; }
+.pp-hero-glow--2 { width: 420px; height: 420px; bottom: -12%; right: -6%; opacity: 0.06; }
+
+.pp-hero-inner {
+  position: relative;
+  z-index: 2;
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: clamp(32px, 5vw, 88px);
+  align-items: center;
+}
+
+/* Left: the picture */
+.pp-hero-visual { will-change: transform; }
+.pp-hero-card {
+  position: relative;
+  aspect-ratio: 16 / 11;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #17151d;
+  box-shadow:
+    0 50px 110px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform: perspective(1400px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  transition: transform 0.25s ease-out;
+}
+.pp-hero-card--clickable { cursor: zoom-in; }
+.pp-hero-card:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 4px;
+}
+.pp-hero-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 110%;
+  height: 100%;
   object-fit: cover;
   display: block;
 }
-.pp-hero-bg-frame {
-  position: absolute;
-  top: -10%;
-  left: 0;
-  width: 100%;
-  height: 120%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px;
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--proj-color) 55%, #17161a) 0%,
-    color-mix(in srgb, var(--proj-color) 25%, #0d0c0f) 100%
-  );
-}
-
-/* Single continuous gradient — starts as the exact page background
-   color (--pp-paper, no new color introduced) at the very bottom, so
-   the hero blends into the .pp-intro section beneath it with no
-   visible seam. Dark tones use rgb(from var(--proj-color) ...) so
-   the scrim always matches whichever project's own accent color is
-   actually behind it (purple for BarkBuddy, green for Pyramid Null,
-   etc.) rather than a fixed navy that can clash. The paper→dark
-   handoff (3%→22%, widened from 3%→14%) is deliberately longer than
-   before for a softer blend — the previous shorter span still read
-   as a visible harder edge against some source photos. */
-.pp-hero-scrim {
+.pp-hero-fallback {
   position: absolute;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  /* Neutral near-black instead of a --proj-color tint — a strong
-     colored wash across the whole photo read as dated/confusing
-     (like an Instagram filter) rather than the clean, restrained
-     look most modern hero sections use (plain dark gradient, not a
-     colored one). This also sidesteps any color-clash concern
-     entirely, since black works with every project's accent color
-     equally rather than needing to match it. */
-  background: linear-gradient(
-    to top,
-    var(--pp-paper) 0%,
-    var(--pp-paper) 3%,
-    rgba(8, 8, 10, 0.62) 24%,
-    rgba(8, 8, 10, 0.22) 48%,
-    transparent 72%
-  );
+  background:
+    radial-gradient(60% 60% at 30% 30%, rgba(255, 255, 255, 0.1), transparent 70%),
+    linear-gradient(160deg, #2c2c32, #151518);
 }
 
-.pp-hero-layer--mid {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.pp-hero-float {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.22;
-  background: var(--proj-color);
-}
-.pp-hero-float--1 { width: 360px; height: 360px; top: 4%;  right: -8%; }
-.pp-hero-float--2 { width: 300px; height: 300px; bottom: 18%; left: -6%; opacity: 0.16; }
-
-.pp-hero-layer--fg {
-  position: relative;
-  z-index: 3;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 40px 72px;
-}
-
-.pp-hero-title-mask {
-  overflow: hidden;
-  padding-bottom: 0.3em;
-}
-.pp-hero-title {
-  font-family: var(--font-display);
-  font-weight: 300;
-  font-size: clamp(56px, 10vw, 148px);
-  line-height: 1.3;
-  letter-spacing: -0.03em;
-  /* Pure white instead of the previous muted #d9d7d7 — the dimmer
-     gray read as washed-out/low-contrast against the photo; white
-     gives it the punch a hero title this size should have. */
-  color: #fff;
-  margin: 0;
-  text-shadow: 0 12px 40px rgba(0,0,0,0.3);
-}
-
-.pp-hero-scrollcue {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  width: 1px;
-  height: 34px;
-  background: linear-gradient(to bottom, rgba(255,255,255,0.7), transparent);
-}
-
-.pp-intro {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 64px 40px 8px;
+/* Right: the text */
+.pp-hero-text {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  gap: 24px;
+  will-change: transform;
 }
-.pp-intro-eyebrow {
-  @include mono-label(12px, 0.24em, 700);
-  color: var(--proj-color);
-  margin-bottom: 16px;
+
+.pp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.pp-intro-tagline {
-  /* 19px → 22px */
-  font-size: 22px;
+.pp-pill {
+  @include mono-label(11px, 0.14em, 700);
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+
+.pp-hero-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(52px, 7vw, 120px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.pp-word {
+  display: inline-block;
+  white-space: nowrap;
+  margin-right: 0.26em;
+}
+.pp-word:last-child { margin-right: 0; }
+.pp-char {
+  display: inline-block;
+  cursor: default;
+  will-change: transform;
+}
+
+.pp-hero-tagline {
+  margin: 0;
+  max-width: 520px;
+  font-size: clamp(18px, 1.6vw, 22px);
   font-weight: 300;
-  line-height: 1.65;
-  color: var(--pp-ink-soft);
-  max-width: 620px;
-  margin-bottom: 22px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.pp-hero-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+.pp-hero-cta,
+.pp-hero-ghost,
+.pp-stack-btn {
+  min-height: 48px;
+  box-sizing: border-box;
 }
 .pp-hero-cta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
+  gap: 8px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: #fff;
   color: var(--pp-ink);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 600;
   text-decoration: none;
-  border-bottom: 1.5px solid var(--proj-color);
-  padding-bottom: 2px;
-  transition: opacity 0.2s;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
 }
-.pp-hero-cta:hover { opacity: 0.65; }
+.pp-hero-cta:hover { transform: translateY(-3px); }
+// "Open preview" and "Built with" share exactly the same look
+.pp-hero-ghost,
+.pp-stack-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: transparent;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.pp-hero-ghost:hover,
+.pp-stack-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-3px);
+}
+.pp-hero-cta:focus-visible,
+.pp-hero-ghost:focus-visible,
+.pp-stack-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
 
-.pp-meta {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 40px;
+// A few small round icons, slightly overlapping
+.pp-stack-icons {
+  display: flex;
+  padding-left: 8px;
+  margin-left: -14px;
 }
-.pp-meta-card {
+.pp-stack-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px #2a2a30;
+  overflow: hidden;
+
+  img { width: 20px; height: 20px; object-fit: contain; }
+  .stk-badge {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50%;
+    font-size: 12px !important;
+  }
+}
+.pp-stack-more {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+/* Scroll cue */
+.pp-scrollcue {
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  z-index: 3;
+  width: 22px;
+  height: 36px;
+  margin-left: -11px;
+  border: 1.5px solid rgba(255, 255, 255, 0.45);
+  border-radius: 12px;
+}
+.pp-scrollcue-dot {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 3px;
+  height: 7px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #fff;
+  animation: ppScrollDot 1.7s ease-in-out infinite;
+}
+@keyframes ppScrollDot {
+  0%   { transform: translateY(0);    opacity: 1; }
+  70%  { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0);    opacity: 0; }
+}
+
+/* Role / With, shown in the hero just before the buttons */
+.pp-hero-info {
   display: flex;
   flex-wrap: wrap;
-  border-radius: 18px;
-  background: var(--pp-surface);
-  overflow: hidden;
+  gap: 14px 36px;
+  margin: 0;
 }
-.pp-meta-item {
-  flex: 1;
-  min-width: 150px;
+.pp-hero-info-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 22px 28px;
-  border-right: 1px solid var(--pp-line);
+  gap: 5px;
 }
-.pp-meta-item:last-child { border-right: none; }
-.pp-meta-stack { flex: 1.6; min-width: 220px; }
-.pp-meta-label { @include mono-label(10px, 0.22em, 700); color: var(--pp-ink-soft); }
-/* 15px → 16.5px */
-.pp-meta-value { font-size: 16.5px; color: var(--pp-ink); }
+.pp-hero-info dt {
+  @include mono-label(10.5px, 0.2em, 700);
+  color: rgba(255, 255, 255, 0.5);
+}
+.pp-hero-info dd {
+  margin: 0;
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.92);
+}
 
+/* Body text */
 .pp-body {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 76px 40px 90px;
+  padding: 84px 40px 90px;
 }
 .pp-body-inner {
-  max-width: 680px;
+  max-width: 760px;
 }
 .pp-para {
-  /* 18px → 19.5px */
   font-size: 19.5px;
   font-weight: 300;
   line-height: 1.85;
   color: color-mix(in srgb, var(--pp-ink) 82%, transparent);
   margin-bottom: 26px;
 }
+.pp-para:first-child {
+  font-size: clamp(22px, 2.2vw, 27px);
+  line-height: 1.6;
+  color: var(--pp-ink);
+}
 .pp-para:last-child { margin-bottom: 0; }
 
+/* ════════════════════════════════════════════
+   GALLERY: pictures and text alternate sides
+   ════════════════════════════════════════════ */
 .pp-gallery {
   display: flex;
   flex-direction: column;
-  gap: 12vh;
+  gap: 14vh;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 8vh 40px 18vh;
+  padding: 4vh 40px 16vh;
 }
 .pp-gallery-item {
   margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
 }
 .pp-gallery-item--text {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 80px);
   align-items: center;
+  justify-items: stretch;
 }
-.pp-gallery-item--reverse {
-  direction: rtl;
-}
-.pp-gallery-item--reverse > * {
-  direction: ltr;
-}
+// Every second one: text on the left, picture on the right
+.pp-gallery-item--flip .pp-gallery-frame { order: 2; }
+.pp-gallery-item--flip .pp-gallery-text  { order: 1; }
 
-.pp-gallery-visual {
-  min-width: 0;
-}
 .pp-gallery-frame {
-  position: relative;
-  background: transparent;
-  border-radius: 14px;
-  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 3.4vw, 48px);
+  border-radius: 32px;
+  background: var(--pp-grey-card);
+  cursor: zoom-in;
+  overflow: hidden;
+}
+.pp-gallery-frame:focus-visible {
+  outline: 3px solid var(--pp-accent);
+  outline-offset: 4px;
 }
 .pp-gallery-img {
   display: block;
-  /* Capped rather than stretched to fill the full column — at 100%
-     width, lower-resolution source screenshots were visibly
-     upscaled/blurry. A smaller display size makes that far less
-     noticeable (the real long-term fix is still higher-resolution
-     source files, but this reduces how obvious it is meanwhile).
-     margin:0 auto centers it horizontally on its own — deliberately
-     NOT using flex+justify-content on the frame for this, since flex's
-     default align-items:stretch was forcing the image to stretch to
-     fill the frame's height, and combined with the frame's
-     overflow:hidden that was cropping the bottom off taller
-     screenshots. A plain block image with margin:0 auto has no such
-     stretch behavior to worry about. */
   width: 100%;
-  max-width: 420px;
+  max-width: 460px;
   height: auto;
-  margin: 0 auto;
-  border-radius: 14px;
-  background: none;
-  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  border-radius: 16px;
+  box-shadow: 0 28px 70px rgba(22, 21, 15, 0.22);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .pp-gallery-frame:hover .pp-gallery-img {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.02);
+}
+
+// Phone screenshots (taller than wide): a smaller frame that hugs the picture,
+// so they sit nicely next to the text instead of towering over the page
+.pp-gallery-frame--portrait {
+  width: fit-content;
+  max-width: 100%;
+  padding: clamp(20px, 2.4vw, 34px);
+  justify-self: center;
+}
+.pp-gallery-frame--portrait .pp-gallery-img {
+  width: auto;
+  max-width: 100%;
+  max-height: min(520px, 68vh);
 }
 
 .pp-gallery-text {
@@ -317,23 +447,15 @@
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.14em;
-  color: var(--proj-color);
+  color: var(--pp-accent);
 }
 .pp-gallery-caption {
-  /* 19px → 21px */
+  margin: 0;
   font-size: 21px;
   font-weight: 300;
   line-height: 1.8;
   color: color-mix(in srgb, var(--pp-ink) 82%, transparent);
   max-width: 480px;
-}
-.pp-gallery-caption:last-child { margin-bottom: 0; }
-
-.pp-gallery-item:not(.pp-gallery-item--text):nth-child(even) .pp-gallery-frame {
-  margin-left: 6%;
-}
-.pp-gallery-item:not(.pp-gallery-item--text):nth-child(odd) .pp-gallery-frame {
-  margin-right: 6%;
 }
 
 .pp-no-shots {
@@ -348,6 +470,61 @@
 .pp-no-shots-hint { font-family: var(--font-mono); font-size: 12px; margin-top: 8px; }
 .pp-no-shots code { background: var(--pp-surface); padding: 2px 6px; border-radius: 4px; }
 
+/* ════════════════════════════════════════════
+   WHAT WAS HARD / WHAT I LEARNED
+   ════════════════════════════════════════════ */
+.pp-reflect {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px 14vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+}
+.pp-reflect--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 800px;
+}
+.pp-reflect-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(28px, 3.4vw, 48px);
+  border-radius: 28px;
+  background: var(--pp-grey-card);
+  color: var(--pp-ink);
+}
+.pp-reflect-card--dark {
+  background: linear-gradient(160deg, #3d3d44 0%, #1a1a1e 100%);
+  color: #fff;
+}
+.pp-reflect-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 22px;
+}
+.pp-reflect-card--dark .pp-reflect-icon { background: rgba(255, 255, 255, 0.12); }
+.pp-reflect-label {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(26px, 2.6vw, 36px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.pp-reflect-text {
+  margin: 0;
+  font-size: 18.5px;
+  font-weight: 300;
+  line-height: 1.8;
+  color: color-mix(in srgb, currentColor 84%, transparent);
+}
+
+/* Previous / next */
 .pp-next {
   display: flex;
   justify-content: space-between;
@@ -375,7 +552,7 @@
   transition: color 0.2s ease;
 }
 .pp-next-link:hover .pp-next-name {
-  color: var(--link-color, var(--pp-ink));
+  color: var(--pp-ink);
 }
 
 .pp-notfound {
@@ -383,6 +560,9 @@
   min-height: 100vh; gap: 24px; font-family: var(--font-body); color: #999;
 }
 
+/* ════════════════════════════════════════════
+   LIGHTBOX
+   ════════════════════════════════════════════ */
 .pp-lightbox {
   position: fixed;
   inset: 0;
@@ -475,35 +655,39 @@
 .pp-lightbox-nav--next { right: 20px; }
 .pp-lightbox-nav--next:hover { transform: translateY(-50%) translateX(2px); }
 
+/* ════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════ */
+@include respond($bp-md) {
+  .pp-hero {
+    min-height: auto;
+    padding: 110px 24px 120px;
+  }
+  .pp-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .pp-scrollcue { display: none; }
+
+  .pp-gallery-item--text {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .pp-gallery-item--flip .pp-gallery-frame,
+  .pp-gallery-item--flip .pp-gallery-text { order: 0; }
+  .pp-gallery-caption { max-width: 100%; }
+}
+
 @include respond($bp-sm) {
-  .pp-nav { padding: 20px 24px; }
+  .pp-back { top: 16px; left: 16px; padding: 9px 15px; }
+  .pp-hero-title { font-size: clamp(44px, 14vw, 72px); }
 
-  .pp-hero { min-height: 480px; }
-  .pp-hero-layer--fg { padding: 0 24px 48px; }
-  .pp-hero-title { font-size: clamp(40px, 14vw, 68px); }
-  .pp-intro { padding: 48px 24px 8px; }
-  .pp-intro-tagline { max-width: 100%; }
-
-  .pp-meta { padding: 0 24px; }
-  .pp-meta-card { flex-direction: column; }
-  .pp-meta-item { border-right: none; border-bottom: 1px solid var(--pp-line); }
-  .pp-meta-item:last-child { border-bottom: none; }
 
   .pp-body { padding: 56px 24px; }
   .pp-body-inner { max-width: 100%; }
 
-  .pp-gallery { padding: 3vh 20px 12vh; gap: 8vh; }
-  .pp-gallery-item--text {
-    grid-template-columns: 1fr;
-    gap: 28px;
-    direction: ltr;
-  }
-  .pp-gallery-caption { max-width: 100%; }
-  .pp-gallery-item:not(.pp-gallery-item--text):nth-child(even) .pp-gallery-frame,
-  .pp-gallery-item:not(.pp-gallery-item--text):nth-child(odd) .pp-gallery-frame {
-    margin-left: 0;
-    margin-right: 0;
-  }
+  .pp-gallery { padding: 3vh 20px 12vh; gap: 9vh; }
+  .pp-reflect { grid-template-columns: 1fr; padding: 0 20px 10vh; }
 
   .pp-next { padding: 32px 24px 16px; flex-direction: column; gap: 20px; }
   .pp-next-next { text-align: left; margin-left: 0; }
@@ -512,4 +696,14 @@
   .pp-lightbox-nav--prev { left: 10px; }
   .pp-lightbox-nav--next { right: 10px; }
   .pp-lightbox-close { top: 16px; right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-js [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .pp-scrollcue-dot { animation: none; }
+  .pp-hero-card { transition: none; transform: none; }
 }

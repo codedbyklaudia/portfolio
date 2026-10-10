@@ -1,0 +1,91 @@
+.sk {
+  background: var(--bg);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 56px 0;
+  overflow: hidden;
+}
+
+/* Edges fade out so icons glide in and out */
+.sk__viewport {
+  overflow: hidden;
+  // Room above and below so an icon that lifts on hover is never clipped
+  padding: 28px 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.sk__track {
+  display: flex;
+  width: max-content;
+  animation: skScroll 60s linear infinite;
+}
+.sk__track:hover,
+.sk__track:focus-within {
+  animation-play-state: paused;
+}
+
+@keyframes skScroll {
+  to { transform: translateX(-50%); }
+}
+
+.sk-row {
+  display: flex;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sk-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 156px;
+  flex-shrink: 0;
+
+  img {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.55;
+    transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  span {
+    font-family: var(--font-decor-alt3);
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    transition: color 0.3s ease;
+  }
+
+  &:hover {
+    img {
+      filter: none;
+      opacity: 1;
+      transform: translateY(-5px);
+    }
+    span { color: var(--black); }
+  }
+}
+
+/* No movement: show one row that can be scrolled by hand */
+@media (prefers-reduced-motion: reduce) {
+  .sk__viewport {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .sk__track { animation: none; }
+  .sk__track .sk-row[aria-hidden] { display: none; }
+}
+
+@media (max-width: 600px) {
+  .sk { padding: 36px 0; }
+  .sk__viewport { padding: 20px 0; }
+  .sk-item { width: 120px; }
+  .sk-item img { width: 44px; height: 44px; }
+}
