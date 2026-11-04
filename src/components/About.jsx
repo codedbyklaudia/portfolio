@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, ArrowRight } from 'lucide-react';
 import { Reveal } from './ScrollEffects';
 import { useLanguage } from '../context/LanguageContext';
+import { cv } from '../data/content';
 import './About.scss';
 
 // ── Scroll colour-reveal text ──
@@ -169,14 +170,16 @@ export default function About() {
                       <p className="about-block-body">{t('about.story.body1')}</p>
                       <p className="about-block-body">{t('about.story.body2')}</p>
                       <div className="about-cta-row">
-                        <a
-                          className="about-cv-btn"
-                          href="/files/Klaudia_Kulawik_CV.pdf"
-                          download
-                        >
-                          <Download size={15} strokeWidth={2.25} />
-                          {t('about.story.cvButton')}
-                        </a>
+                        {cv.ready && (
+                          <a
+                            className="about-cv-btn"
+                            href={cv.url}
+                            download={cv.fileName}
+                          >
+                            <Download size={15} strokeWidth={2.25} />
+                            {t('about.story.cvButton')}
+                          </a>
+                        )}
                         <a className="about-secondary-link" href="#contact">
                           <span className="about-secondary-text">{t('about.story.contactLink')}</span>
                           <ArrowRight size={14} strokeWidth={2.25} />

@@ -4,6 +4,7 @@ import Draggable from './Draggable';
 import SkillsWindow from './SkillsWindow';
 import { CalendarWidget, ClockWidget, MusicWidget, PhotoWidget, WeatherWidget } from './DesktopWidgets';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
+import { cv } from '../data/content';
 import './Hero.scss';
 
 const NAV_FOLDERS = [
@@ -16,9 +17,6 @@ const FOLDER_SIZE = 0.9;
 
 
 
-// Put your CV in public/cv/ and update the file name here
-const CV_URL = '/cv/Klaudia_Kulawik_CV.pdf';
-const CV_FILENAME = 'Klaudia_Kulawik_CV.pdf';
 
 // Document icon for the CV file on the desktop
 function CvIcon() {
@@ -368,18 +366,21 @@ export default function Hero() {
                     <span className="lh-reveal-folder-label">{tr('hero.toolbox', 'Toolbox')}</span>
                   </Draggable>
 
-                  <Draggable
-                    as="a"
-                    id="file-cv"
-                    className="lh-reveal-folder-btn lh-reveal-file"
-                    href={CV_URL}
-                    download={CV_FILENAME}
-                    draggable={false}
-                    aria-label={tr('hero.cvDownload', 'Download CV')}
-                  >
-                    <CvIcon />
-                    <span className="lh-reveal-folder-label">{tr('hero.cv', 'CV.pdf')}</span>
-                  </Draggable>
+                  {/* hidden until the CV is ready (see cv in data/content.js) */}
+                  {cv.ready && (
+                    <Draggable
+                      as="a"
+                      id="file-cv"
+                      className="lh-reveal-folder-btn lh-reveal-file"
+                      href={cv.url}
+                      download={cv.fileName}
+                      draggable={false}
+                      aria-label={tr('hero.cvDownload', 'Download CV')}
+                    >
+                      <CvIcon />
+                      <span className="lh-reveal-folder-label">{tr('hero.cv', 'CV.pdf')}</span>
+                    </Draggable>
+                  )}
                 </div>
 
                 <div className="lh-reveal-col">

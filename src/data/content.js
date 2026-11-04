@@ -209,3 +209,11 @@ export const projects = [
     categories: ['web'],
   },
 ];
+// Your CV. Put the PDF in public/cv/ with this file name, then set `ready` to
+// true to show the download buttons (the CV file on the hero desktop and the
+// button in About).
+export const cv = {
+  ready: false,
+  url: '/cv/Klaudia_Kulawik_CV.pdf',
+  fileName: 'Klaudia_Kulawik_CV.pdf',
+};
