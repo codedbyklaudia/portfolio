@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import Folder from './Folder';
 import Draggable from './Draggable';
 import SkillsWindow from './SkillsWindow';
+import { CalendarWidget, ClockWidget, MusicWidget, PhotoWidget, WeatherWidget } from './DesktopWidgets';
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
 import './Hero.scss';
 
@@ -12,6 +13,8 @@ const NAV_FOLDERS = [
 ];
 
 const FOLDER_SIZE = 0.9;
+
+
 
 // Put your CV in public/cv/ and update the file name here
 const CV_URL = '/cv/Klaudia_Kulawik_CV.pdf';
@@ -44,14 +47,8 @@ export default function Hero() {
   const stickyContentRef  = useRef(null);
   const loginScreenRef    = useRef(null); 
   const navFoldersRef     = useRef(null);
-  const dockRef           = useRef(null);
 
-  const { t, lang, setLang } = useLanguage();
-  const LANGUAGE_NAMES = Object.fromEntries(LANGUAGES.map(l => [l.code, l.label]));
-  const LANGUAGE_FLAGS = Object.fromEntries(
-    LANGUAGES.map(l => [l.code, l.flag])
-  );
-
+  const { t, lang, switchLang } = useLanguage();
   // Translation with an English fallback, so the dictionary entry
   // works before the keys exist in every language file.
   const tr = (key, fallback) => {
@@ -59,7 +56,6 @@ export default function Hero() {
     return !value || value === key ? fallback : value;
   };
 
-  const [langTransition, setLangTransition] = useState(null);
 
   const [revealed, setRevealed] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -70,66 +66,42 @@ export default function Hero() {
   const CLOCK_LOCALES = { en: 'en-GB', pl: 'pl-PL', it: 'it-IT', de: 'de-DE', ja: 'ja-JP' };
   const clockLocale = CLOCK_LOCALES[lang] || 'en-GB';
   const widgetTime = now.toLocaleTimeString(clockLocale, { hour: '2-digit', minute: '2-digit' });
-  const [weather, setWeather] = useState(null); // { tempC, emoji } | null
-  useEffect(() => {
-    const codeToEmoji = (code) => {
-      if (code === 0) return '☀️';
-      if ([1, 2, 3].includes(code)) return '⛅';
-      if ([45, 48].includes(code)) return '🌫️';
-      if ([51, 53, 55, 56, 57, 80, 81, 82].includes(code)) return '🌦️';
-      if ([61, 63, 65, 66, 67].includes(code)) return '🌧️';
-      if ([71, 73, 75, 77, 85, 86].includes(code)) return '❄️';
-      if ([95, 96, 99].includes(code)) return '⛈️';
-      return '🌤️';
-    };
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=51.5072&longitude=-0.1276&current_weather=true')
-      .then(r => r.json())
-      .then(data => {
-        if (data?.current_weather) {
-          setWeather({
-            tempC: Math.round(data.current_weather.temperature),
-            emoji: codeToEmoji(data.current_weather.weathercode),
-          });
-        }
-      })
-      .catch(() => {}); // silent — widget just shows '--' if this fails
-  }, []);
   const widgetDate = now.toLocaleDateString(clockLocale, { weekday: 'long', day: 'numeric', month: 'long' });
-  const clockSeconds = now.getSeconds() + now.getMilliseconds() / 1000;
-  const clockMinutes = now.getMinutes() + clockSeconds / 60;
-  const clockHours   = (now.getHours() % 12) + clockMinutes / 60;
-  const secAngle  = clockSeconds * 6;
-  const minAngle  = clockMinutes * 6;
-  const hourAngle = clockHours * 30;
 
   // Per-nav-folder open state — keyed by folderKey now, not the (no
   // longer always-unique) scroll target.
-  const [openNavFolders, setOpenNavFolders] = useState({});
+  // Only one folder is open at a time: opening another one closes it
+  const [openNavFolder, setOpenNavFolder] = useState(null);
+  const navCloseTimer = useRef(null);
+  useEffect(() => () => clearTimeout(navCloseTimer.current), []);
 
   // Toolbox (skills) window
   const [skillsOpen, setSkillsOpen] = useState(false);
   useEffect(() => {
-    if (!revealed) setSkillsOpen(false);
+    if (!revealed) {
+      setSkillsOpen(false);
+      setOpenNavFolder(null);
+    }
   }, [revealed]);
+
+  const toggleToolbox = () => {
+    setOpenNavFolder(null);
+    setSkillsOpen((open) => !open);
+  };
 
   const openSection = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleLangChange = (code) => {
-    if (code === lang || langTransition) return; 
-    setLangTransition(code);
-    setTimeout(() => {
-      setLang(code);
-    }, 1820);
-    setTimeout(() => {
-      setLangTransition(null);
-    }, 3700);
-  };
+  const handleLangChange = (code) => switchLang(code);
 
   const handleNavFolderClick = (folder) => {
-    setOpenNavFolders({ [folder.folderKey]: true });
+    setSkillsOpen(false);
+    setOpenNavFolder(folder.folderKey);
+    // it closes again once you've gone to its section
+    clearTimeout(navCloseTimer.current);
+    navCloseTimer.current = setTimeout(() => setOpenNavFolder(null), 1600);
     if (folder.presetTab) {
       sessionStorage.setItem('cbk-about-tab', folder.presetTab);
     }
@@ -148,8 +120,6 @@ export default function Hero() {
 
     const section = sectionRef.current;
     if (!section) return;
-
-    if (dockRef.current) { dockRef.current.style.opacity = '0'; }
 
     let ticking = false;
     const onScroll = () => {
@@ -171,7 +141,7 @@ export default function Hero() {
         // laptop zoom is gone), so this is a plain opacity+scale wipe
         // that reads as "logging in" rather than an abrupt cut.
         if (loginScreenRef.current) {
-          const loginOut = Math.min(1, Math.max(0, (p1 - 0.35) / 0.55));
+          const loginOut = Math.min(1, Math.max(0, (p1 - 0.3) / 0.4)); // fully gone before the desktop appears
           loginScreenRef.current.style.opacity   = String(1 - loginOut);
           loginScreenRef.current.style.transform = `scale(${1 + loginOut * 0.06})`;
           loginScreenRef.current.style.visibility = loginOut >= 0.999 ? 'hidden' : 'visible';
@@ -180,6 +150,8 @@ export default function Hero() {
         const isRevealed = p1 > 0.72;
 
         setRevealed(prev => (prev === isRevealed ? prev : isRevealed));
+        // under the fading desktop, the section turns light like Projects (no dark strip)
+        section.style.background = isRevealed ? 'var(--bg)' : '';
 
         // ── Phase 2 ──
         const p2 = isRevealed ? Math.max(0, (p - 0.55) / 0.45) : 0;
@@ -219,6 +191,9 @@ export default function Hero() {
           const rgb   = isRevealed ? '245,243,239' : '28,22,17';
           const alpha = 1 - diveP;
           stickyRef.current.style.background = `rgba(${rgb},${alpha})`;
+          // fade the whole layer (the light wash included) so Projects shows
+          // through as the desktop recedes, instead of a blank screen first
+          stickyRef.current.style.opacity = String(alpha);
 
           stickyRef.current.style.visibility = diveP >= 0.999 ? 'hidden' : 'visible';
         }
@@ -227,19 +202,12 @@ export default function Hero() {
           bgRef.current.style.opacity = String(1 - diveP);
         }
 
-        if (dockRef.current) {
-          const dockIn  = Math.min(1, Math.max(0, (p1 - 0.72) / 0.15));
-          const dockOut = Math.max(0, 1 - Math.max(0, (p2 - 0.5) / 0.2));
-          dockRef.current.style.opacity   = dockIn * dockOut;
-          dockRef.current.style.transform = `translateX(-50%) translateY(${(1 - dockIn) * 40}px)`;
-        }
-
         // ── Parallax — folder column drifts slightly across the
         // whole scroll range. Combined into one transform string
         // alongside the vertical-centering translateY, since setting
         // .style.transform overwrites rather than merges with CSS.
         if (navFoldersRef.current) {
-          navFoldersRef.current.style.transform = `translateY(calc(-50% - ${p * 30}px))`;
+          navFoldersRef.current.style.transform = `translateY(${-p * 30}px)`;
         }
 
         ticking = false;
@@ -254,14 +222,6 @@ export default function Hero() {
   return (
     <section id="hero" className="lh-section" ref={sectionRef}>
 
-      {langTransition && (
-        <div className="lh-lang-overlay" aria-hidden="true">
-          <div className="lh-lang-wave lh-lang-wave--1" />
-          <div className="lh-lang-wave lh-lang-wave--2" />
-          <div className="lh-lang-wave lh-lang-wave--3" />
-          <span className="lh-lang-overlay-text">{LANGUAGE_NAMES[langTransition]}</span>
-        </div>
-      )}
 
       <div className="lh-sticky" ref={stickyRef}>
 
@@ -322,9 +282,6 @@ export default function Hero() {
               </div>
 
               <div className="lh-login-user">
-                <div className="lh-login-avatar">
-                  <img src="/images/codedbyklaudia_logo_1.png" alt="CodedByKlaudia logo" />
-                </div>
                 <div className="lh-login-name">Klaudia Kulawik</div>
 
                 <button
@@ -342,76 +299,45 @@ export default function Hero() {
           <div className={`lh-final ${revealed ? 'lh-final--visible' : ''}`}>
             <div className="lh-reveal-scene">
 
-              {/* Top-left widget group */}
+              {/* Top-left: the widgets, like a Mac desktop */}
               <div className="lh-reveal-topleft lh-anim lh-anim--1">
-
                 <div className="lh-widget-grid">
-                  <Draggable id="widget-clock" className="lh-widget-card lh-widget-card--clock">
-                    <svg className="lh-clock-face" viewBox="0 0 100 100" aria-hidden="true">
-                      <circle cx="50" cy="50" r="47" className="lh-clock-ring" />
-                      {Array.from({ length: 12 }).map((_, i) => (
-                        <line
-                          key={i}
-                          className="lh-clock-tick"
-                          x1="50" y1="6" x2="50" y2={i % 3 === 0 ? '13' : '10'}
-                          transform={`rotate(${i * 30} 50 50)`}
-                        />
-                      ))}
-                      <line className="lh-clock-hand lh-clock-hand--hour"
-                            x1="50" y1="50" x2="50" y2="27"
-                            transform={`rotate(${hourAngle} 50 50)`} />
-                      <line className="lh-clock-hand lh-clock-hand--min"
-                            x1="50" y1="50" x2="50" y2="16"
-                            transform={`rotate(${minAngle} 50 50)`} />
-                      <line className="lh-clock-hand lh-clock-hand--sec"
-                            x1="50" y1="56" x2="50" y2="12"
-                            transform={`rotate(${secAngle} 50 50)`} />
-                      <circle cx="50" cy="50" r="2.4" className="lh-clock-pivot" />
-                    </svg>
-                    <div className="lh-widget-time">{widgetTime}</div>
-                    <div className="lh-widget-date">{widgetDate}</div>
-                  </Draggable>
-
-                  <Draggable id="widget-weather" className="lh-widget-card lh-widget-card--weather">
-                    <span className="lh-widget-weather-icon" aria-hidden="true">{weather?.emoji || '☀️'}</span>
-                    <div className="lh-widget-weather-condition">{weather ? `${weather.tempC}°C` : '--'}</div>
-                    <div className="lh-widget-weather-city">{t('hero.location')}</div>
-                  </Draggable>
+                  <ClockWidget locale={clockLocale} />
+                  <CalendarWidget locale={clockLocale} />
+                  <MusicWidget />
+                  <WeatherWidget locale={clockLocale} />
+                  <PhotoWidget src="/images/nox_widget.jpg" caption={tr('hero.photoCaption', 'My manager, Nox')} />
                 </div>
-
-                <div className="lh-lang-switcher" role="group" aria-label="Language">
-                  {LANGUAGES.map(({ code, flag, label }) => (
-                    <button
-                      key={code}
-                      type="button"
-                      className={`lh-lang-btn ${lang === code ? 'lh-lang-btn--active' : ''}`}
-                      onClick={() => handleLangChange(code)}
-                      aria-label={`Switch to ${label}`}
-                    >
-                      <img
-                        src={flag}
-                        alt=""
-                        className="lh-lang-flag"
-                        width={24}
-                        height={16}
-                      />
-                      <span>{code.toUpperCase()}</span>
-                    </button>
-                  ))}
-                </div>
-
-                <p className="lh-topleft-bio">{t('hero.bio')}</p>
               </div>
 
-              {/* Center column — just the tagline + scroll hint now
-                  that the widgets live top-left instead. */}
-              <div className="lh-reveal-center lh-anim lh-anim--2">
-                <p className="lh-reveal-quote">{t('hero.quote')}</p>
+              {/* Bottom-right: who I am */}
+              <div className="lh-reveal-intro lh-anim lh-anim--2">
+                <h1 className="lh-intro-title">
+                  <span>{tr('hero.introHello', 'I’m Klaudia.')}</span>
+                  <span>
+                    <span className="lh-intro-underline">{tr('hero.introRole', 'Web & App')}</span> {tr('hero.introRole2', 'Developer.')}
+                  </span>
+                </h1>
+                <p className="lh-intro-text">
+                  {tr('hero.introText', 'Creating websites, apps and building creative immersive digital experiences.')}
+                </p>
+              </div>
 
-                <div className={`lh-scroll-hint ${revealed ? 'lh-scroll-hint--visible' : ''}`}>
-                  <span className="lh-scroll-hint-arrow" aria-hidden="true">↓</span>
-                  <span className="lh-scroll-hint-text">{t('hero.scrollHint')}</span>
-                </div>
+              {/* Bottom-right corner: the languages */}
+              <div className="lh-lang-switcher lh-lang-switcher--corner lh-anim lh-anim--2" role="group" aria-label={tr('footer.language', 'Language')}>
+                {LANGUAGES.map(({ code, flag, label }) => (
+                  <button
+                    key={code}
+                    type="button"
+                    className={`lh-lang-btn ${lang === code ? 'lh-lang-btn--active' : ''}`}
+                    onClick={() => handleLangChange(code)}
+                    aria-label={label}
+                    aria-pressed={lang === code}
+                  >
+                    <img src={flag} alt="" className="lh-lang-flag" width={24} height={16} />
+                    <span>{code.toUpperCase()}</span>
+                  </button>
+                ))}
               </div>
 
               {/* Same <Folder/> component + fan-open animation the old
@@ -433,7 +359,7 @@ export default function Hero() {
                     type="button"
                     id="folder-toolbox"
                     className="lh-reveal-folder-btn"
-                    onClick={() => setSkillsOpen((open) => !open)}
+                    onClick={toggleToolbox}
                     aria-label={tr('hero.toolbox', 'Toolbox')}
                   >
                     <span className="lh-reveal-folder-icon-mirror">
@@ -465,10 +391,10 @@ export default function Hero() {
                       key={f.folderKey}
                       className="lh-reveal-folder-btn"
                       onClick={() => handleNavFolderClick(f)}
-                      aria-label={`Open ${t(f.key)}`}
+                      aria-label={t(f.key)}
                     >
                       <span className="lh-reveal-folder-icon-mirror">
-                        <Folder color={f.color} size={FOLDER_SIZE} open={!!openNavFolders[f.folderKey]} />
+                        <Folder color={f.color} size={FOLDER_SIZE} open={openNavFolder === f.folderKey} />
                       </span>
                       <span className="lh-reveal-folder-label">{t(f.key)}</span>
                     </Draggable>
@@ -476,37 +402,6 @@ export default function Hero() {
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          <div className="lh-hero-dock" ref={dockRef} style={{ opacity: 0 }}>
-            <div className="lh-dock-icon lh-dock-icon--finder">
-              <img src="/images/finder.png" alt="Finder Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--safari">
-              <img src="/images/safari.png" alt="Safari Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--mail">
-              <img src="/images/mail1.png" alt="Mail Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--photos">
-              <img src="/images/photos.png" alt="Photos Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--notes">
-               <img src="/images/notes.png" alt="Notes Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--calendar">
-               <img src="/images/calendar.png" alt="Calendar Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--settings">
-               <img src="/images/camera.png" alt="Camera Icon" />
-            </div>
-            <div className="lh-dock-icon lh-dock-icon--terminal">
-              <img src="/images/terminal1.png" alt="Terminal Icon" />
-            </div>
-            <div className="lh-dock-sep" />
-            <div className="lh-dock-icon lh-dock-icon--trash">
-              <img src="/images/trash.png" alt="Trash Icon" />
             </div>
           </div>
 

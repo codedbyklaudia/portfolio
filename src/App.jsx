@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import './App.scss';
 
 import CursorTrail     from './components/CursorTrail';
 import Loader           from './components/Loader';
 import Nav              from './components/Nav';
+import Dock             from './components/Dock';
 import Hero             from './components/Hero';
 import ProjectsFolder   from './components/ProjectsFolder';
 import About            from './components/About';
@@ -19,10 +20,25 @@ import { ContactStageProvider } from './context/ContactStageContext';
 // Heavy assets the loader should wait for (wallpaper, folder icons, hero image)
 const PRELOAD = [];
 
+// The history entry the page was (re)loaded on: a refresh always starts at the top
+const LOADED_KEY = window.history.state?.key;
+
 function HomePage() {
+  const location = useLocation();
+
+  // Coming back from a project page: land on the Projects section instead of
+  // the top (runs after the Hero has reset the scroll to 0)
+  useEffect(() => {
+    if (location.key === LOADED_KEY) return;
+    const id = location.state?.scrollTo;
+    const el = id && document.getElementById(id);
+    if (el) window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY);
+  }, [location.key]);
+
   return (
     <>
       <Nav />
+      <Dock />
       <main>
         <Hero />
         <ProjectsFolder />

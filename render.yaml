@@ -1,0 +1,20 @@
+# The contact form's mail server (server/), hosted on Render.
+# Secrets are filled in on Render's dashboard, never committed here.
+services:
+  - type: web
+    name: codedbyklaudia-contact
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: MAIL_TO
+        value: hello@codedbyklaudia.co.uk
+      - key: CORS_ORIGIN
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false

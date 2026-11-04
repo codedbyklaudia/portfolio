@@ -11,7 +11,7 @@ const PHONE_HREF = 'tel:+447376698047';
 // Same profile links and icons as the footer
 const SOCIALS = [
   { key: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/codedbyklaudia', Icon: InstagramIcon },
-  { key: 'linkedin',  label: 'LinkedIn',  href: 'https://www.linkedin.com/in/codedbyklaudia', Icon: LinkedinIcon },
+  { key: 'linkedin',  label: 'LinkedIn',  href: 'https://www.linkedin.com/in/klaudia-kulawik-886b952bb/', Icon: LinkedinIcon },
   { key: 'github',    label: 'GitHub',    href: 'https://github.com/codedbyklaudia', Icon: GithubIcon },
 ];
 
@@ -28,6 +28,15 @@ const REQUEST_TIMEOUT_MS = 40000; // free hosting can take a while to wake up
 const EMOJIS = ['👋', '🚀', '💡', '✨', '🎯', '💻', '🐾', '☕'];
 
 const EMPTY = { from: '', subject: '', message: '' };
+
+// The topic chips above the form: each fills in the subject and starts the message
+// (the subject and starter are translated as `${key}.subject` and `${key}.starter`)
+const TOPICS = [
+  { id: 'website', emoji: '🌐', key: 'contact.topic.website', label: 'A website' },
+  { id: 'app', emoji: '📱', key: 'contact.topic.app', label: 'An app' },
+  { id: 'collab', emoji: '🤝', key: 'contact.topic.collab', label: 'Working together' },
+  { id: 'hi', emoji: '👋', key: 'contact.topic.hi', label: 'Just saying hi' },
+];
 
 export default function Contact() {
   const { t } = useLanguage();
@@ -63,7 +72,7 @@ export default function Contact() {
   }, []);
 
   // Static headline, last word in the accent colour
-  const heading = tr('contact.heading', "Let's build something together.");
+  const heading = tr('contact.heading', 'Let’s build something together.');
   const lastSpace = heading.lastIndexOf(' ');
   const headingStart = lastSpace > 0 ? heading.slice(0, lastSpace + 1) : heading;
   const headingEnd = lastSpace > 0 ? heading.slice(lastSpace + 1) : '';
@@ -75,6 +84,25 @@ export default function Contact() {
   const [attachment, setAttachment] = useState(null); // { name, type, base64 }
   const [attachError, setAttachError] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
+  const [topic, setTopic] = useState(null);
+
+  // choosing a topic fills in the subject, and starts the message if it's still empty
+  const pickTopic = (tp) => {
+    const starter = t(`${tp.key}.starter`);
+    setTopic(tp.id);
+    setForm((f) => ({
+      ...f,
+      subject: t(`${tp.key}.subject`),
+      message: !f.message.trim() || TOPICS.some((o) => t(`${o.key}.starter`) === f.message) ? starter : f.message,
+    }));
+    setFieldErrors((errs) => ({ ...errs, subject: '', message: '' }));
+    setTimeout(() => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = ta.value.length;
+    }, 0);
+  };
 
   const socials = SOCIALS.filter((s) => s.href);
 
@@ -191,6 +219,7 @@ export default function Contact() {
 
   const reset = () => {
     setStatus('idle');
+    setTopic(null);
     setForm(EMPTY);
     setAttachment(null);
     setFieldErrors({});
@@ -207,43 +236,17 @@ export default function Contact() {
     >
       <div className="ct__inner">
 
-        {/* Left: headline + direct contact */}
-        <div className="ct__intro">
+        {/* Top: the headline, with the tagline beside it */}
+        <header className="ct__intro">
           <h2 className="ct__title">
             {headingStart}
-            {headingEnd && <span className="ct__accent">{headingEnd}</span>}
+            {headingEnd && <em className="ct__accent">{headingEnd}</em>}
           </h2>
-
           <p className="ct__tagline">{t('contact.tagline')}</p>
+        </header>
 
-          <div className="ct__direct">
-            <div className="ct__contacts">
-              <a className="ct__email" href={`mailto:${EMAIL}`}>{EMAIL}</a>
-              <a className="ct__email" href={PHONE_HREF}>{PHONE_DISPLAY}</a>
-            </div>
-
-            {socials.length > 0 && (
-              <ul className="ct__socials">
-                {socials.map(({ key, label, href, Icon }) => (
-                  <li key={key}>
-                    <a
-                      className="ct__social"
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      title={label}
-                    >
-                      <Icon size={20} />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* Right: Mac mail window */}
+        <div className="ct__grid">
+        {/* Mac mail window */}
         <div className="ct__panel">
           <div className="ct__mail">
             <div className="ct__mail-bar">
@@ -257,7 +260,12 @@ export default function Contact() {
 
             {done ? (
               <div className="ct__done" role="status">
-                <span className="ct__done-icon" aria-hidden="true">✉️</span>
+                <span className="ct__done-icon" aria-hidden="true">
+                  <svg className="ct__done-plane" viewBox="0 0 24 24">
+                    <path d="M3 11.5 21 3l-6.5 18-3.2-7.3L3 11.5z" />
+                    <path d="M11.3 13.7 21 3" />
+                  </svg>
+                </span>
                 <h3>{status === 'sent' ? t('contact.mail.sentTitle') : tr('contact.almost', 'Almost there.')}</h3>
                 <p>
                   {status === 'sent'
@@ -270,6 +278,23 @@ export default function Contact() {
               </div>
             ) : (
               <form ref={formRef} className="ct__form" onSubmit={onSubmit} noValidate>
+                <fieldset className="ct__topics">
+                  <legend>{tr('contact.topic.label', "What's it about?")}</legend>
+                  <div className="ct__chips">
+                    {TOPICS.map((tp) => (
+                      <button
+                        key={tp.id}
+                        type="button"
+                        className={`ct__chip ${topic === tp.id ? 'ct__chip--on' : ''}`}
+                        aria-pressed={topic === tp.id}
+                        onClick={() => pickTopic(tp)}
+                      >
+                        <span aria-hidden="true">{tp.emoji}</span> {tr(tp.key, tp.label)}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+
                 <div className="ct__row">
                   <label htmlFor="ct-to">{t('contact.mail.to')}</label>
                   <input id="ct-to" className="ct__input" value={EMAIL} readOnly tabIndex={-1} />
@@ -311,7 +336,7 @@ export default function Contact() {
                 {attachment && (
                   <div className="ct__att">
                     <span>📎 {attachment.name}</span>
-                    <button type="button" onClick={removeFile} aria-label="Remove attachment">✕</button>
+                    <button type="button" onClick={removeFile} aria-label={t('contact.mail.removeAttachment')}>✕</button>
                   </div>
                 )}
                 {attachError && <p className="ct__error">{attachError}</p>}
@@ -366,8 +391,8 @@ export default function Contact() {
                     <button
                       type="button"
                       className="ct__tool"
-                      title="Emoji"
-                      aria-label="Emoji"
+                      title={t('contact.mail.emoji')}
+                      aria-label={t('contact.mail.emoji')}
                       onClick={() => setShowEmojis((s) => !s)}
                     >
                       😊
@@ -377,12 +402,68 @@ export default function Contact() {
                   <button type="submit" className="ct__submit" disabled={status === 'sending'}>
                     {status === 'sending'
                       ? <span className="ct__spinner" aria-label={tr('contact.sending', 'Sending…')} />
-                      : <>{t('contact.mail.send')} <span aria-hidden="true">↑</span></>}
+                      : (
+                        <>
+                          {t('contact.mail.send')}
+                          <svg className="ct__plane" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 11.5 21 3l-6.5 18-3.2-7.3L3 11.5z" />
+                            <path d="M11.3 13.7 21 3" />
+                          </svg>
+                        </>
+                      )}
                   </button>
                 </div>
               </form>
             )}
           </div>
+        </div>
+
+        {/* Beside it: the other ways to reach me, as little widgets */}
+        <aside className="ct__side">
+          <a className="ct__card" href={`mailto:${EMAIL}`}>
+            <span className="ct__card-icon" aria-hidden="true">✉️</span>
+            <span className="ct__card-text">
+              <span className="ct__card-label">{tr('contact.card.email', 'Email')}</span>
+              <span className="ct__card-value">{EMAIL}</span>
+            </span>
+            <span className="ct__card-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="ct__card" href={PHONE_HREF}>
+            <span className="ct__card-icon" aria-hidden="true">📞</span>
+            <span className="ct__card-text">
+              <span className="ct__card-label">{tr('contact.card.phone', 'Phone')}</span>
+              <span className="ct__card-value">{PHONE_DISPLAY}</span>
+            </span>
+            <span className="ct__card-arrow" aria-hidden="true">↗</span>
+          </a>
+
+          {socials.length > 0 && (
+            <div className="ct__card ct__card--socials">
+              <span className="ct__card-label">{tr('contact.card.socials', 'Find me online')}</span>
+              <ul className="ct__socials">
+                {socials.map(({ key, label, href, Icon }) => (
+                  <li key={key}>
+                    <a
+                      className="ct__social"
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      title={label}
+                    >
+                      <Icon size={20} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <p className="ct__reply">
+            <span className="ct__reply-dot" aria-hidden="true" />
+            {tr('contact.replyNote', 'Usually replies within a day')}
+          </p>
+        </aside>
         </div>
       </div>
     </section>

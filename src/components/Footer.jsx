@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ArrowUp,
-  Accessibility,
-  Mail,
-  Compass,
-  SlidersHorizontal,
-  MapPin,
-  X,
+  ArrowUpRight,
+  Check,
+  Copy,
+  Pause,
+  Play,
+  SkipBack,
 } from 'lucide-react';
 
 import { useLanguage, LANGUAGES } from '../context/LanguageContext';
@@ -16,27 +16,102 @@ import {
   readFlag,
   setFlag,
 } from '../accessibility';
-import { InstagramIcon, LinkedinIcon, GithubIcon } from './SocialIcons';
+import { SONG, player } from './song';
 import './Footer.scss';
 
-// One on/off row in the accessibility menu
+// One on/off switch in the Control Centre
 const A11yToggle = ({ label, checked, onChange }) => (
-  <label className="footer-a11y-row footer-a11y-toggle">
+  <label className="footer-switch">
     <span>{label}</span>
     <input
       type="checkbox"
+      role="switch"
       checked={checked}
       onChange={(event) => onChange(event.target.checked)}
     />
+    <span className="footer-switch-track" aria-hidden="true" />
   </label>
 );
 
+const EMAIL = 'hello@codedbyklaudia.co.uk';
+
+/** The time in London, updated every few seconds */
+function useLondonTime() {
+  const format = () =>
+    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }).format(new Date());
+  const [time, setTime] = useState(format);
+  useEffect(() => {
+    const id = setInterval(() => setTime(format()), 10000);
+    return () => clearInterval(id);
+  }, []);
+  return time;
+}
+
+const fmt = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+
+/** The desktop's song, as a small music widget: a record that spins while it plays */
+function FooterMusic() {
+  const { t } = useLanguage();
+  const [playing, setPlaying] = useState(player.playing);
+  const [time, setTime] = useState(() => player.time());
+  useEffect(() => player.subscribe((st) => setPlaying(st.playing)), []);
+  useEffect(() => {
+    if (!playing) return undefined;
+    const id = window.setInterval(() => setTime(player.time()), 250);
+    return () => window.clearInterval(id);
+  }, [playing]);
+  const duration = player.duration();
+  const restart = () => {
+    player.restart();
+    setTime(0);
+  };
+  return (
+    <section className={`footer-music ${playing ? 'is-playing' : ''}`} aria-label={SONG.title}>
+      <div className="footer-music-top">
+        <div className="footer-music-art" aria-hidden="true">
+          <span className="footer-music-record" />
+        </div>
+        <div className="footer-music-info">
+          <p className="footer-music-title">{SONG.title}</p>
+          <p className="footer-music-artist">{SONG.artist}</p>
+        </div>
+      </div>
+      <div className="footer-music-progress" aria-hidden="true">
+        <span style={{ width: `${Math.min(100, (time / duration) * 100)}%` }} />
+      </div>
+      <div className="footer-music-bottom">
+        <span className="footer-music-time" aria-hidden="true">{fmt(time)}</span>
+        <div className="footer-music-controls">
+          <button type="button" onClick={restart} aria-label={t('music.restart')}>
+            <SkipBack size={15} strokeWidth={2.25} />
+          </button>
+          <button
+            type="button"
+            className="footer-music-play"
+            onClick={() => player.toggle()}
+            aria-label={`${t(playing ? 'music.pause' : 'music.play')}: ${SONG.title}`}
+            aria-pressed={playing}
+          >
+            {playing ? <Pause size={16} strokeWidth={2.5} /> : <Play size={16} strokeWidth={2.5} />}
+          </button>
+        </div>
+        <span className="footer-music-time" aria-hidden="true">-{fmt(Math.max(0, duration - time))}</span>
+      </div>
+    </section>
+  );
+}
+
 /* ============================================================
    FOOTER
+   All on one dark brown: a sticky note of what I'm available for, three
+   columns of links (navigation, contact, socials), two widgets (Control
+   Centre with languages and accessibility, always open, and the song), a
+   hairline, the small print, and a big serif wordmark with a round logo in
+   the corner. The wordmark's letters rise in and hop.
    ============================================================ */
 
 export default function Footer() {
-  const { lang, setLang, t } = useLanguage();
+  const { lang, switchLang, t } = useLanguage();
 
   // Translation with an English fallback for keys that don't exist yet
   const tr = (key, fallback) => {
@@ -44,48 +119,27 @@ export default function Footer() {
     return !value || value === key ? fallback : value;
   };
 
-  const [showA11y, setShowA11y] = useState(false);
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
-
-  const a11yRef = useRef(null);
-  const langRef = useRef(null);
+  // the first time the footer scrolls into view, the wordmark's letters rise out of the floor
+  const footerRef = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        io.disconnect();
+      }
+    }, { threshold: 0.2 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const [fontScale, setFontScale] = useState(readFontScale);
   const [dyslexia, setDyslexia] = useState(() => readFlag('dyslexia'));
   const [textSpacing, setTextSpacing] = useState(() => readFlag('spacing'));
   const [underlineLinks, setUnderlineLinks] = useState(() => readFlag('links'));
   const [highContrast, setHighContrast] = useState(() => readFlag('contrast'));
-
-  /* ============================================================
-     CLOSE POPUPS: click outside, or Escape
-     ============================================================ */
-
-  useEffect(() => {
-    if (!showA11y && !showLangDropdown) return;
-
-    const onPointerDown = (event) => {
-      if (showA11y && a11yRef.current && !a11yRef.current.contains(event.target)) {
-        setShowA11y(false);
-      }
-      if (showLangDropdown && langRef.current && !langRef.current.contains(event.target)) {
-        setShowLangDropdown(false);
-      }
-    };
-
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        setShowA11y(false);
-        setShowLangDropdown(false);
-      }
-    };
-
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [showA11y, showLangDropdown]);
 
   /* ============================================================
      APPLY SETTINGS (saved and set on <html> by accessibility.js)
@@ -117,413 +171,203 @@ export default function Footer() {
     setHighContrast(false);
   };
 
-  /* ============================================================
-     NAVIGATION
-     ============================================================ */
+  // London time, for the small print
+  const londonTime = useLondonTime();
 
-  // Same targets and labels as the main navbar
-  const NAV_LINKS = [
-    {
-      label: t('nav.projects'),
-      href: '#projects-folder',
-    },
-    {
-      label: t('nav.aboutMe'),
-      href: '#about',
-    },
-    {
-      label: t('nav.contact'),
-      href: '#contact',
-    },
+  const [copied, setCopied] = useState(false);
+  const copyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      window.location.href = `mailto:${EMAIL}`;
+    }
+  };
+
+  const SHORTCUTS = [
+    { label: t('nav.projects'), href: '#projects-folder' },
+    { label: t('nav.aboutMe'), href: '#about' },
+    { label: tr('dock.toolbox', 'Toolbox'), href: '#skills' },
+    { label: t('nav.contact'), href: '#contact' },
   ];
 
-  const currentLanguage =
-    LANGUAGES.find((language) => language.code === lang) ||
-    LANGUAGES[0];
+  const SOCIALS = [
+    { label: 'GitHub', href: 'https://github.com/codedbyklaudia' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/klaudia-kulawik-886b952bb/' },
+    { label: 'Instagram', href: 'https://www.instagram.com/codedbyklaudia' },
+  ];
 
   return (
-    <footer className="footer">
+    <footer className={`footer ${inView ? 'footer--in' : ''}`} ref={footerRef}>
       <div className="footer-inner">
 
-        {/* ======================================================
-            BACK TO TOP
-        ====================================================== */}
-
-        <button
-          type="button"
-          className="footer-top-btn"
-          onClick={scrollToTop}
-          aria-label={t('footer.backToTop')}
-        >
-          <ArrowUp size={16} strokeWidth={2.25} />
-          <span>{t('footer.backToTop')}</span>
-        </button>
-
-        {/* ======================================================
-            FOOTER GRID
-        ====================================================== */}
-
-        <div className="footer-grid">
-
-          {/* CONTACT */}
-
-          <div className="footer-col">
-            <span className="footer-col-label">
-              <Mail size={13} strokeWidth={2.25} />
-              {t('footer.contactLabel')}
-            </span>
-
-            <a
-              className="footer-link"
-              href="mailto:hello@codedbyklaudia.co.uk"
-            >
-              hello@codedbyklaudia.co.uk
-            </a>
-
-            <a
-              className="footer-link"
-              href="tel:+447376698047"
-            >
-              +44 737 669 8047
-            </a>
-
-            {/* Socials */}
-
-            <div className="footer-socials">
-
-              <a
-                href="https://www.instagram.com/codedbyklaudia"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="footer-social-link"
-              >
-                <InstagramIcon size={16} />
-              </a>
-
-              <a
-                href="https://www.linkedin.com/in/codedbyklaudia"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                className="footer-social-link"
-              >
-                <LinkedinIcon size={16} />
-              </a>
-
-              <a
-                href="https://github.com/codedbyklaudia"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                className="footer-social-link"
-              >
-                <GithubIcon size={16} />
-              </a>
-
-            </div>
+        {/* ── The name, and the columns ── */}
+        <div className="footer-top">
+          <div className="footer-brand">
+            {/* availability, on a sticky note like the one on the Projects window */}
+            <ul className="footer-note">
+              <li className="footer-status">
+                <span className="footer-status-dot" aria-hidden="true" />
+                {t('footer.availableWorldwide')}
+              </li>
+              <li className="footer-status">
+                <span className="footer-status-dot" aria-hidden="true" />
+                {t('footer.availableFullTime')}
+              </li>
+            </ul>
           </div>
 
-          {/* NAVIGATION */}
+          <div className="footer-cols">
 
-          <div className="footer-col">
-            <span className="footer-col-label">
-              <Compass size={13} strokeWidth={2.25} />
-              {t('footer.navigationLabel')}
-            </span>
+            {/* Navigation */}
+            <nav className="footer-col" aria-labelledby="footer-nav">
+              <p className="footer-heading footer-heading--circle" id="footer-nav">{t('footer.navigationLabel')}</p>
+              <ul className="footer-list">
+                {SHORTCUTS.map((s) => (
+                  <li key={s.href}>
+                    <a className="footer-link" href={s.href}>{s.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
 
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.href}
-                className="footer-link"
-                href={link.href}
-              >
-                {link.label}
-              </a>
-            ))}
+            {/* Say hello */}
+            <section className="footer-col" aria-labelledby="footer-hello">
+              <p className="footer-heading footer-heading--square" id="footer-hello">{tr('footer.sayHello', 'Say hello')}</p>
+              <ul className="footer-list">
+                <li>
+                  <a className="footer-link" href={`mailto:${EMAIL}`}>{EMAIL}</a>
+                </li>
+                <li>
+                  <a className="footer-link" href="tel:+447376698047">+44 737 669 8047</a>
+                </li>
+                <li>
+                  <button type="button" className="footer-link footer-link--btn" onClick={copyEmail} aria-label={tr('footer.copyEmail', 'Copy the email address')}>
+                    {copied ? <Check size={13} strokeWidth={2.5} /> : <Copy size={13} strokeWidth={2.25} />}
+                    <span>{copied ? tr('footer.copied', 'Copied!') : tr('footer.copy', 'Copy')}</span>
+                  </button>
+                </li>
+              </ul>
+            </section>
+
+            {/* Find me online */}
+            <section className="footer-col" aria-labelledby="footer-social">
+              <p className="footer-heading footer-heading--star" id="footer-social">{tr('footer.socials', 'Find me online')}</p>
+              <ul className="footer-list">
+                {SOCIALS.map((s) => (
+                  <li key={s.label}>
+                    <a className="footer-link" href={s.href} target="_blank" rel="noopener noreferrer">
+                      {s.label}
+                      <ArrowUpRight size={13} strokeWidth={2.25} className="footer-link-arrow" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
           </div>
 
-          {/* SETTINGS */}
+          {/* ── Widgets, like the ones on the desktop ── */}
+          <div className="footer-widgets">
 
-          <div className="footer-col footer-a11y-wrap">
+            {/* Control Centre: languages and accessibility, always open */}
+            <section className="footer-control" aria-labelledby="footer-control">
+              <p className="footer-heading footer-heading--triangle" id="footer-control">{t('footer.settingsLabel')}</p>
 
-            <span className="footer-col-label">
-              <SlidersHorizontal
-                size={13}
-                strokeWidth={2.25}
-              />
-              {t('footer.settingsLabel')}
-            </span>
-
-            {/* Language selector */}
-
-            <div className="footer-setting-row">
-
-              <div className="footer-lang-dropdown" ref={langRef}>
-
-                {/* Current language */}
-
-                <button
-                  type="button"
-                  className="footer-lang-trigger"
-                  onClick={() =>
-                    setShowLangDropdown((prev) => !prev)
-                  }
-                  aria-expanded={showLangDropdown}
-                  aria-haspopup="listbox"
-                >
-                  <img
-                    src={currentLanguage.flag}
-                    alt=""
-                    className="footer-lang-flag"
-                  />
-
-                  <span>
-                    {currentLanguage.label}
-                  </span>
-
-                  <span
-                    className={`footer-lang-chevron ${
-                      showLangDropdown
-                        ? 'footer-lang-chevron--open'
-                        : ''
-                    }`}
-                    aria-hidden="true"
+              <div className="footer-langs" role="group" aria-label={tr('footer.language', 'Language')}>
+                {LANGUAGES.map((language) => (
+                  <button
+                    key={language.code}
+                    type="button"
+                    className={`footer-lang ${lang === language.code ? 'is-active' : ''}`}
+                    onClick={() => switchLang(language.code)}
+                    aria-pressed={lang === language.code}
+                    aria-label={language.label}
+                    title={language.label}
                   >
-                    ▾
-                  </span>
-                </button>
-
-                {/* Language options */}
-
-                {showLangDropdown && (
-                  <div
-                    className="footer-lang-options"
-                    role="listbox"
-                    aria-label="Language"
-                  >
-                    {LANGUAGES.map((language) => (
-                      <button
-                        key={language.code}
-                        type="button"
-                        role="option"
-                        aria-selected={
-                          lang === language.code
-                        }
-                        className={`footer-lang-option ${
-                          lang === language.code
-                            ? 'footer-lang-option--active'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          setLang(language.code);
-                          setShowLangDropdown(false);
-                        }}
-                      >
-                        <img
-                          src={language.flag}
-                          alt=""
-                          className="footer-lang-flag"
-                        />
-
-                        <span>
-                          {language.label}
-                        </span>
-
-                        {lang === language.code && (
-                          <span
-                            className="footer-lang-check"
-                            aria-hidden="true"
-                          >
-                            ✓
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
+                    <img src={language.flag} alt="" />
+                    <span>{language.code.toUpperCase()}</span>
+                  </button>
+                ))}
               </div>
 
-            </div>
-
-            {/* Accessibility: button + popover share one ref for outside clicks */}
-
-            <div className="footer-a11y" ref={a11yRef}>
-
-              <button
-                type="button"
-                className="footer-setting-row footer-link--btn"
-                onClick={() =>
-                  setShowA11y((state) => !state)
-                }
-                aria-expanded={showA11y}
-              >
-                <Accessibility
-                  size={15}
-                  strokeWidth={2}
-                  className="footer-setting-icon"
-                />
-
-                <span>
-                  {t('footer.accessibility')}
-                </span>
-              </button>
-
-              {showA11y && (
-                <div
-                  className="footer-a11y-menu"
-                  role="dialog"
-                  aria-label={t('footer.accessibility')}
-                >
-
-                  {/* Header with close button */}
-
-                  <div className="footer-a11y-head">
-                    <span>{t('footer.accessibility')}</span>
-
-                    <button
-                      type="button"
-                      className="footer-a11y-close"
-                      onClick={() => setShowA11y(false)}
-                      aria-label={tr('footer.close', 'Close')}
-                    >
-                      <X size={14} strokeWidth={2.25} />
-                    </button>
-                  </div>
-
-                  {/* Font size */}
-
-                  <div className="footer-a11y-row">
-                    <span>
-                      {t('footer.fontSize')}
-                    </span>
-
-                    <div className="footer-a11y-steppers">
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFontScale((scale) =>
-                            Math.max(
-                              0.85,
-                              +(scale - 0.1).toFixed(2)
-                            )
-                          )
-                        }
-                        aria-label="Decrease text size"
-                      >
-                        A−
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFontScale((scale) =>
-                            Math.min(
-                              1.4,
-                              +(scale + 0.1).toFixed(2)
-                            )
-                          )
-                        }
-                        aria-label="Increase text size"
-                      >
-                        A+
-                      </button>
-
-                    </div>
-                  </div>
-
-                  {/* Reading options */}
-
-                  <A11yToggle
-                    label={tr('footer.dyslexiaFont', 'Dyslexia-friendly font')}
-                    checked={dyslexia}
-                    onChange={setDyslexia}
-                  />
-
-                  <A11yToggle
-                    label={tr('footer.textSpacing', 'Text spacing')}
-                    checked={textSpacing}
-                    onChange={setTextSpacing}
-                  />
-
-                  <A11yToggle
-                    label={tr('footer.underlineLinks', 'Underline links')}
-                    checked={underlineLinks}
-                    onChange={setUnderlineLinks}
-                  />
-
-                  <A11yToggle
-                    label={t('footer.highContrast')}
-                    checked={highContrast}
-                    onChange={setHighContrast}
-                  />
-
-                  {/* Reset */}
-
+              <div className="footer-size">
+                <span>{t('footer.fontSize')}</span>
+                <div className="footer-size-steppers">
                   <button
                     type="button"
-                    className="footer-a11y-reset"
-                    onClick={resetA11y}
+                    onClick={() => setFontScale((scale) => Math.max(0.85, +(scale - 0.1).toFixed(2)))}
+                    aria-label={t('a11y.textSmaller')}
                   >
-                    {t('footer.reset')}
+                    A−
                   </button>
-
+                  <output aria-live="polite">{Math.round(fontScale * 100)}%</output>
+                  <button
+                    type="button"
+                    onClick={() => setFontScale((scale) => Math.min(1.4, +(scale + 0.1).toFixed(2)))}
+                    aria-label={t('a11y.textBigger')}
+                  >
+                    A+
+                  </button>
                 </div>
-              )}
+              </div>
 
-            </div>
+              <div className="footer-switches">
+                <A11yToggle label={tr('footer.dyslexiaFont', 'Dyslexia-friendly font')} checked={dyslexia} onChange={setDyslexia} />
+                <A11yToggle label={tr('footer.textSpacing', 'Text spacing')} checked={textSpacing} onChange={setTextSpacing} />
+                <A11yToggle label={tr('footer.underlineLinks', 'Underline links')} checked={underlineLinks} onChange={setUnderlineLinks} />
+                <A11yToggle label={t('footer.highContrast')} checked={highContrast} onChange={setHighContrast} />
+              </div>
 
+              <button type="button" className="footer-reset" onClick={resetA11y}>
+                {t('footer.reset')}
+              </button>
+            </section>
+
+            {/* The song */}
+            <FooterMusic />
           </div>
-
-          {/* LOCATION */}
-
-          <div className="footer-col">
-
-            <span className="footer-col-label">
-              <MapPin
-                size={13}
-                strokeWidth={2.25}
-              />
-              {t('footer.locationLabel')}
-            </span>
-
-            <span className="footer-link">
-              London, UK
-            </span>
-
-            <span className="footer-link">
-              {t('footer.availableWorldwide')}
-            </span>
-
-          </div>
-
         </div>
 
-        {/* ======================================================
-            LEGAL BAR
-        ====================================================== */}
-
+        {/* ── The small print ── */}
         <div className="footer-legal">
-
-          <span className="footer-copy">
-            © {new Date().getFullYear()} codedbyklaudia.{' '}
-            {t('footer.allRightsReserved')}
+          <span>© {new Date().getFullYear()} codedbyklaudia. {t('footer.allRightsReserved')}</span>
+          <span>{t('footer.builtWith')}</span>
+          <span className="footer-legal-right">
+            <span>{t('common.londonUk')} · {londonTime}</span>
+            <button type="button" className="footer-top-btn" onClick={scrollToTop}>
+              {t('footer.backToTop')}
+              <span className="footer-top-circle" aria-hidden="true">
+                <ArrowUp size={15} strokeWidth={2.25} />
+              </span>
+            </button>
           </span>
-
-          <span className="footer-built">
-            {t('footer.builtWith')}
-          </span>
-
         </div>
 
-        {/* WORDMARK*/}
+        {/* ── The wordmark, big and elegant, with a round logo in the corner.
+            Its letters rise in when the footer arrives, and hop in colour when
+            you point at them. ── */}
+        <div className="footer-sign">
+          <div className="footer-wordmark" aria-hidden="true">
+            <span className="footer-wordmark-text">
+              {[...'codedbyklaudia'].map((ch, i) => (
+                <span key={i} className="footer-wordmark-char" style={{ '--i': i }}>{ch}</span>
+              ))}
+            </span>
+          </div>
 
-        <div className="footer-wordmark">
-          <span className="footer-wordmark-text">
-            codedbyklaudia
-          </span>
+          <div className="footer-badge" aria-hidden="true">
+            <svg viewBox="0 0 100 100">
+              <defs>
+                <path id="footer-badge-ring" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+              </defs>
+              <text>
+                <textPath href="#footer-badge-ring" textLength="236">CODEDBYKLAUDIA ® CODEDBYKLAUDIA ®</textPath>
+              </text>
+              <circle cx="50" cy="50" r="19" />
+            </svg>
+          </div>
         </div>
 
       </div>

@@ -28,7 +28,7 @@ export default function SkillsStrip() {
   })();
 
   return (
-    <section className="sk" aria-label={label}>
+    <section id="skills" className="sk" aria-label={label}>
       <div className="sk__viewport">
         <div className="sk__track">
           <Row />

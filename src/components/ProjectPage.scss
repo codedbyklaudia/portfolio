@@ -1,142 +1,263 @@
 @use '../styles' as *;
+@use './sectionTheme' as theme;
+
+$spring: cubic-bezier(0.34, 1.56, 0.64, 1);   // overshoots a little, then settles
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
 .pp-root {
-  --pp-paper: #FAFAF8;
-  --pp-surface: #F1EFE7;
-  --pp-ink: #16150F;
-  --pp-ink-soft: #706C60;
-  --pp-line: rgba(22, 21, 15, 0.1);
-  // One grey colour scheme for every project
-  --pp-grey-card: #ebebed;
-  // Small accents (progress bar, tag dots, numbers, hovers). Each project
-  // keeps its own colour here. For ONE colour everywhere, change this to
-  // a fixed colour, e.g. --pp-accent: #4A7FB5;
+  --pp-ink: #{theme.$ink};
+  --pp-ink-soft: #6b665e;
+  --pp-line: rgba(31, 27, 23, 0.1);
   --pp-accent: var(--proj-color);
+  --pp-paper: #fff;
   min-height: 100vh;
-  background: var(--pp-paper);
+  background:
+    radial-gradient(circle, rgba(31, 27, 23, 0.07) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    theme.$bg;
   color: var(--pp-ink);
   font-family: var(--font-body);
-  overflow-x: clip; // pictures slide in from the side without adding a scrollbar
+  overflow-x: clip;
 }
-
-.pp-progress { position: fixed; top: 0; left: 0; right: 0; height: 4px; z-index: 200; }
-.pp-progress-bar { height: 100%; width: 100%; background: var(--pp-accent); transform-origin: left center; transform: scaleX(0); }
 
 /* ════════════════════════════════════════════
-   SCROLL REVEALS
-   Elements marked data-reveal start slightly off to one side and slide
-   into place when they enter the screen (see the IntersectionObserver in
-   ProjectPage.jsx). They only start hidden once the page has switched on
-   the .pp-js class, so nothing can be stuck invisible.
+   MENU BAR: back to the projects, the app's name, its menu, the clock
    ════════════════════════════════════════════ */
-.pp-js [data-reveal] {
-  opacity: 0;
-  transition:
-    opacity 0.6s ease var(--d, 0s),
-    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0s);
+.pp-menubar {
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 44px;
+  padding: 0 clamp(14px, 2vw, 24px);
+  @include glass(rgba(246, 245, 243, 0.78), 18px);
+  border-bottom: 1px solid var(--pp-line);
+  font-size: 14px;
 }
-.pp-js [data-reveal="left"]  { transform: translateX(-70px); }
-.pp-js [data-reveal="right"] { transform: translateX(70px); }
-.pp-js [data-reveal="up"]    { transform: translateY(26px); }
-.pp-js [data-reveal].is-revealed {
-  opacity: 1;
-  transform: none;
+.pp-menubar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(31, 27, 23, 0.06);
+  color: var(--pp-ink);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.3s $spring;
+  span { transition: transform 0.3s $spring; }
+  &:hover { background: var(--pp-ink); color: #fff; }
+  &:hover span { transform: translateX(-3px); }
+  &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 2px; }
+}
+.pp-menubar-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pp-menubar-menu {
+  display: flex;
+  gap: 4px;
+  a {
+    padding: 5px 10px;
+    border-radius: 6px;
+    color: rgba(31, 27, 23, 0.72);
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    &:hover { background: var(--pp-accent); color: #fff; }
+    &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 1px; }
+  }
+}
+.pp-menubar-clock {
+  margin-left: auto;
+  color: rgba(31, 27, 23, 0.7);
+  white-space: nowrap;
+}
+// reading progress: a thin line along the bottom of the menu bar
+.pp-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+}
+.pp-progress-bar {
+  height: 100%;
+  background: var(--pp-accent);
+  transform-origin: left center;
+  transform: scaleX(0);
 }
 
-/* Back button: same look as the hero buttons (white pill) */
-.pp-back {
+/* ════════════════════════════════════════════
+   THE DESKTOP: grey like the rest of the site, with a soft glow of the
+   project's own colour
+   ════════════════════════════════════════════ */
+.pp-desk {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(48px, 7vh, 88px);
+  padding: clamp(28px, 5vh, 56px) clamp(16px, 4vw, 64px) clamp(24px, 4vh, 48px);
+  overflow: hidden;
+}
+.pp-desk--end { padding-top: clamp(24px, 4vh, 48px); padding-bottom: clamp(48px, 8vh, 96px); }
+.pp-desk-glow {
   position: fixed;
-  top: 20px;
-  left: 28px;
-  z-index: 100;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(120px);
+  background: var(--proj-color);
+  pointer-events: none;
+}
+.pp-desk-glow--1 { width: 680px; height: 680px; top: -200px; left: -200px; opacity: 0.32; }
+.pp-desk-glow--2 { width: 560px; height: 560px; bottom: -220px; right: -220px; opacity: 0.24; }
+
+// small folder icons (menu bar, desktop icons)
+.pp-folder-icon {
+  flex: none;
+  overflow: visible;
+  .pp-folder-icon-back { fill: color-mix(in srgb, var(--fc) 78%, #000); }
+  .pp-folder-icon-front { fill: var(--fc); }
+}
+
+/* ════════════════════════════════════════════
+   HELLO: the name and details on the left, the picture on the right
+   ════════════════════════════════════════════ */
+.pp-hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: clamp(32px, 5vw, 88px);
+  align-items: center;
+  width: 100%;
+  max-width: 1680px;
+  min-height: calc(100vh - 44px - clamp(28px, 5vh, 56px) * 2);
+  margin: 0 auto;
+  scroll-margin-top: 44px;
+}
+.pp-hero-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  animation: pp-rise 0.8s $ease-out both;
+}
+@keyframes pp-rise {
+  from { opacity: 0; transform: translateY(24px); }
+}
+.pp-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 14px rgba(31, 27, 23, 0.06);
+  font-size: 13.5px;
+  font-weight: 600;
+  transform: rotate(-2deg);
+}
+.pp-hero-kicker-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--pp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pp-accent) 22%, transparent);
+}
+// in the tall serif of the footer's wordmark
+.pp-hero-title {
+  margin: 0;
+  font-family: $font-serif-display;
+  font-weight: 400;
+  font-size: calc(clamp(56px, 7.4vw, 150px) * var(--font-scale, 1));
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.pp-hero-tagline {
+  margin: 0;
+  max-width: 40ch;
+  font-size: clamp(17px, 1.2vw, 21px);
+  line-height: 1.6;
+  color: var(--pp-ink-soft);
+}
+
+// the details: label on the left, value on the right
+.pp-info {
+  width: 100%;
+  max-width: 460px;
+  margin: 4px 0 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  @include glass(rgba(255, 255, 255, 0.6), 12px);
+}
+.pp-info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 14.5px;
+  dt { flex: none; font-weight: 600; color: var(--pp-ink-soft); }
+  dd { margin: 0 0 0 auto; text-align: right; font-weight: 600; }
+}
+.pp-info-row + .pp-info-row { border-top: 1px dashed rgba(31, 27, 23, 0.14); }
+
+.pp-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+.pp-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 46px;
-  padding: 0 24px;
+  padding: 12px 22px;
+  border: 1px solid rgba(31, 27, 23, 0.16);
   border-radius: 999px;
   background: #fff;
   color: var(--pp-ink);
   font-family: var(--font-body);
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-  transition: transform 0.2s ease;
-}
-.pp-back:hover { transform: translateX(-3px); }
-.pp-back:focus-visible {
-  outline: 2px solid var(--pp-ink);
-  outline-offset: 3px;
-}
+  cursor: pointer;
+  transition: transform 0.3s $spring, background 0.2s ease, color 0.2s ease, box-shadow 0.3s ease;
 
-/* ════════════════════════════════════════════
-   HERO: picture left, text right
-   ════════════════════════════════════════════ */
-.pp-hero {
-  position: relative;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 56px;
-  padding: 120px 5vw 110px;
-  overflow: hidden;
+  &:hover { transform: translateY(-3px) rotate(-1.5deg); box-shadow: 0 10px 22px rgba(31, 27, 23, 0.12); }
+  &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 3px; }
+}
+.pp-btn--primary {
+  border-color: transparent;
+  background: var(--pp-accent);
   color: #fff;
-  border-radius: 0 0 clamp(28px, 4vw, 64px) clamp(28px, 4vw, 64px);
-  background: linear-gradient(160deg, #3d3d44 0%, #222227 50%, #131316 100%);
-}
-// Fine grain so the dark background never looks flat
-.pp-hero::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  opacity: 0.1;
-  mix-blend-mode: overlay;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.6'/%3E%3C/svg%3E");
+  &:hover { background: color-mix(in srgb, var(--pp-accent) 82%, #000); }
 }
 
-.pp-hero-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(110px);
-  background: #fff;
-  pointer-events: none;
-}
-.pp-hero-glow--1 { width: 520px; height: 520px; top: -14%; left: -8%; opacity: 0.1; }
-.pp-hero-glow--2 { width: 420px; height: 420px; bottom: -12%; right: -6%; opacity: 0.06; }
-
-.pp-hero-inner {
-  position: relative;
-  z-index: 2;
-  width: min(1400px, 100%);
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: clamp(32px, 5vw, 88px);
-  align-items: center;
-}
-
-/* Left: the picture */
-.pp-hero-visual { will-change: transform; }
+// the picture: resting slightly crooked, it tilts towards the mouse
 .pp-hero-card {
   position: relative;
   aspect-ratio: 16 / 11;
-  border-radius: 26px;
+  border-radius: 20px;
   overflow: hidden;
-  background: #17151d;
-  box-shadow:
-    0 50px 110px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-  transform: perspective(1400px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+  background: color-mix(in srgb, var(--proj-color) 14%, #f1efea);
+  box-shadow: 0 40px 90px rgba(31, 27, 23, 0.22), 0 10px 24px rgba(31, 27, 23, 0.1);
+  transform: perspective(1400px) rotate(1.5deg) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   transition: transform 0.25s ease-out;
+  animation: pp-card-in 0.9s $spring 0.15s both;
+}
+@keyframes pp-card-in {
+  from { opacity: 0; transform: perspective(1400px) rotate(6deg) translateY(40px) scale(0.92); }
 }
 .pp-hero-card--clickable { cursor: zoom-in; }
-.pp-hero-card:focus-visible {
-  outline: 3px solid #fff;
-  outline-offset: 4px;
-}
+.pp-hero-card:focus-visible { outline: 3px solid var(--pp-accent); outline-offset: 4px; }
 .pp-hero-img {
   position: absolute;
   inset: 0;
@@ -148,416 +269,494 @@
 .pp-hero-fallback {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(60% 60% at 30% 30%, rgba(255, 255, 255, 0.1), transparent 70%),
-    linear-gradient(160deg, #2c2c32, #151518);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--proj-color) 40%, #fff), var(--proj-color));
 }
 
-/* Right: the text */
-.pp-hero-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 24px;
-  will-change: transform;
-}
-
-.pp-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.pp-pill {
-  @include mono-label(11px, 0.14em, 700);
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.09);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 7px 14px;
-  border-radius: 999px;
-}
-
-.pp-hero-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(52px, 7vw, 120px);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
-  color: #fff;
-}
-.pp-word {
-  display: inline-block;
-  white-space: nowrap;
-  margin-right: 0.26em;
-}
-.pp-word:last-child { margin-right: 0; }
-.pp-char {
-  display: inline-block;
-  cursor: default;
-  will-change: transform;
-}
-
-.pp-hero-tagline {
-  margin: 0;
-  max-width: 520px;
-  font-size: clamp(18px, 1.6vw, 22px);
-  font-weight: 300;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.76);
-}
-
-.pp-hero-actions {
+/* ════════════════════════════════════════════
+   ABOUT, with the tools in a Mac Dock
+   ════════════════════════════════════════════ */
+.pp-about {
   position: relative;
-  z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-}
-.pp-hero-cta,
-.pp-hero-ghost,
-.pp-stack-btn {
-  min-height: 48px;
-  box-sizing: border-box;
-}
-.pp-hero-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 26px;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--pp-ink);
-  font-family: var(--font-body);
-  font-size: 14.5px;
-  font-weight: 600;
-  text-decoration: none;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s ease;
-}
-.pp-hero-cta:hover { transform: translateY(-3px); }
-// "Open preview" and "Built with" share exactly the same look
-.pp-hero-ghost,
-.pp-stack-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 24px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: transparent;
-  color: #fff;
-  font-family: var(--font-body);
-  font-size: 14.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-.pp-hero-ghost:hover,
-.pp-stack-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-3px);
-}
-.pp-hero-cta:focus-visible,
-.pp-hero-ghost:focus-visible,
-.pp-stack-btn:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 3px;
-}
-
-// A few small round icons, slightly overlapping
-.pp-stack-icons {
-  display: flex;
-  padding-left: 8px;
-  margin-left: -14px;
-}
-.pp-stack-icon {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  margin-left: -8px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 2px #2a2a30;
-  overflow: hidden;
-
-  img { width: 20px; height: 20px; object-fit: contain; }
-  .stk-badge {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 50%;
-    font-size: 12px !important;
-  }
-}
-.pp-stack-more {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 13px;
-}
-
-/* Scroll cue */
-.pp-scrollcue {
-  position: absolute;
-  bottom: 38px;
-  left: 50%;
-  z-index: 3;
-  width: 22px;
-  height: 36px;
-  margin-left: -11px;
-  border: 1.5px solid rgba(255, 255, 255, 0.45);
-  border-radius: 12px;
-}
-.pp-scrollcue-dot {
-  position: absolute;
-  top: 7px;
-  left: 50%;
-  width: 3px;
-  height: 7px;
-  margin-left: -1.5px;
-  border-radius: 2px;
-  background: #fff;
-  animation: ppScrollDot 1.7s ease-in-out infinite;
-}
-@keyframes ppScrollDot {
-  0%   { transform: translateY(0);    opacity: 1; }
-  70%  { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0);    opacity: 0; }
-}
-
-/* Role / With, shown in the hero just before the buttons */
-.pp-hero-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 36px;
-  margin: 0;
-}
-.pp-hero-info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.pp-hero-info dt {
-  @include mono-label(10.5px, 0.2em, 700);
-  color: rgba(255, 255, 255, 0.5);
-}
-.pp-hero-info dd {
-  margin: 0;
-  font-size: 17px;
-  color: rgba(255, 255, 255, 0.92);
-}
-
-/* Body text */
-.pp-body {
-  max-width: 1200px;
+  z-index: 1;
+  width: 100%;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 84px 40px 90px;
+  text-align: center;
 }
-.pp-body-inner {
-  max-width: 760px;
+.pp-section-title {
+  margin: 0 0 24px;
+  font-family: $font-serif-display;
+  font-style: italic;
+  font-weight: 400;
+  font-size: calc(clamp(40px, 4.6vw, 68px) * var(--font-scale, 1));
+  line-height: 1;
 }
 .pp-para {
-  font-size: 19.5px;
-  font-weight: 300;
-  line-height: 1.85;
-  color: color-mix(in srgb, var(--pp-ink) 82%, transparent);
-  margin-bottom: 26px;
+  margin: 0 auto 18px;
+  max-width: 62ch;
+  font-size: clamp(17px, 1.2vw, 21px);
+  line-height: 1.8;
+  color: rgba(31, 27, 23, 0.82);
 }
-.pp-para:first-child {
-  font-size: clamp(22px, 2.2vw, 27px);
-  line-height: 1.6;
-  color: var(--pp-ink);
-}
-.pp-para:last-child { margin-bottom: 0; }
 
-/* ════════════════════════════════════════════
-   GALLERY: pictures and text alternate sides
-   ════════════════════════════════════════════ */
-.pp-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: 14vh;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 4vh 40px 16vh;
+.pp-dock-wrap { margin-top: 48px; }
+.pp-dock-label {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
 }
-.pp-gallery-item {
+.pp-dock {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  max-width: 100%;
   margin: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: center;
+  padding: 10px 14px;
+  list-style: none;
+  border-radius: 24px;
+  @include glass(rgba(255, 255, 255, 0.5), 18px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 18px 40px rgba(31, 27, 23, 0.14);
 }
-.pp-gallery-item--text {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(32px, 5vw, 80px);
-  align-items: center;
-  justify-items: stretch;
+.pp-dock-item {
+  position: relative;
+  outline: none;
 }
-// Every second one: text on the left, picture on the right
-.pp-gallery-item--flip .pp-gallery-frame { order: 2; }
-.pp-gallery-item--flip .pp-gallery-text  { order: 1; }
-
-.pp-gallery-frame {
+.pp-dock-icon {
   display: grid;
   place-items: center;
-  padding: clamp(24px, 3.4vw, 48px);
-  border-radius: 32px;
-  background: var(--pp-grey-card);
-  cursor: zoom-in;
-  overflow: hidden;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(31, 27, 23, 0.1);
+  transform-origin: center bottom;
+  transition: transform 0.3s $spring;
+
+  img { width: 34px; height: 34px; object-fit: contain; }
+  .stk-badge {
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--proj-color) 18%, #fff);
+    color: var(--pp-ink);
+    font-weight: 700;
+  }
 }
-.pp-gallery-frame:focus-visible {
-  outline: 3px solid var(--pp-accent);
-  outline-offset: 4px;
+// like the real Dock: the icon you point at grows, and its neighbours a little
+.pp-dock-item:hover .pp-dock-icon,
+.pp-dock-item:focus-visible .pp-dock-icon { transform: translateY(-12px) scale(1.4); }
+.pp-dock-item:hover + .pp-dock-item .pp-dock-icon,
+.pp-dock-item:has(+ .pp-dock-item:hover) .pp-dock-icon { transform: translateY(-5px) scale(1.18); }
+.pp-dock-item:focus-visible .pp-dock-icon { box-shadow: 0 0 0 3px var(--pp-accent); }
+// its name, in a little label above
+.pp-dock-name {
+  position: absolute;
+  bottom: calc(100% + 30px);
+  left: 50%;
+  z-index: 2;
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: rgba(31, 27, 23, 0.85);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.2s ease;
 }
-.pp-gallery-img {
+.pp-dock-item:hover .pp-dock-name,
+.pp-dock-item:focus-visible .pp-dock-name { opacity: 1; transform: translate(-50%, 0); }
+
+/* ════════════════════════════════════════════
+   THE FILMSTRIP: every screenshot in a row you can swipe or drag through
+   ════════════════════════════════════════════ */
+.pp-strip {
+  position: relative;
+  z-index: 1;
+  padding: clamp(8px, 2vh, 24px) 0 clamp(32px, 6vh, 64px);
+  scroll-margin-top: 64px;
+  // how tall the cards are: most of the screen, but never so wide they spill off it
+  --card-h: clamp(260px, calc(100vh - 360px), 680px);
+}
+.pp-strip--phone { --card-h: clamp(360px, calc(100vh - 400px), 720px); }
+
+.pp-strip-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  max-width: 1680px;
+  margin: 0 auto clamp(16px, 3vh, 32px);
+  padding: 0 clamp(16px, 4vw, 64px);
+}
+.pp-strip-kicker {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
+}
+.pp-strip-count {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  font-family: $font-serif-display;
+  line-height: 0.9;
+}
+.pp-strip-count-now {
+  // room for the italic numbers to lean, so the last one isn't cut off
+  padding-right: 0.12em;
+  margin-right: -0.12em;
+  font-style: italic;
+  font-size: clamp(56px, 6vw, 110px);
+  color: var(--pp-accent);
+  animation: pp-count 0.45s $spring;
+}
+@keyframes pp-count {
+  from { opacity: 0; transform: translateY(18px) rotate(-6deg); }
+}
+.pp-strip-count-all {
+  font-size: clamp(22px, 2vw, 32px);
+  color: var(--pp-ink-soft);
+}
+
+// a little sticky note with the hint
+.pp-strip-hint {
+  margin: 0 0 8px auto;
+  padding: 10px 14px 12px;
+  background: #fff3b0;
+  border-radius: 2px 2px 12px 2px;
+  box-shadow: 0 8px 16px rgba(31, 27, 23, 0.14);
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: #4a3f1c;
+  transform: rotate(3deg);
+  animation: pp-wobble 2.6s ease-in-out infinite;
+}
+@keyframes pp-wobble {
+  0%, 100% { transform: rotate(3deg); }
+  50% { transform: rotate(-1deg) translateY(-3px); }
+}
+
+.pp-strip-arrows {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    border: 1px solid rgba(31, 27, 23, 0.14);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.75);
+    color: theme.$ink;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(31, 27, 23, 0.1);
+    transition: transform 0.3s $spring, background 0.2s ease, opacity 0.2s ease;
+    &:hover:not(:disabled) { transform: scale(1.1); background: #fff; }
+    &:active:not(:disabled) { transform: scale(0.94); }
+    &:disabled { opacity: 0.35; cursor: default; }
+    &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 3px; }
+  }
+}
+
+// the row itself
+.pp-strip-track {
+  container-type: inline-size;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(16px, 2.5vw, 40px);
+  margin: 0;
+  padding: 18px 0 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  cursor: grab;
+  &::-webkit-scrollbar { display: none; }
+  &.is-dragging {
+    scroll-snap-type: none;
+    cursor: grabbing;
+    .pp-strip-shot { cursor: grabbing; }
+  }
+}
+.pp-strip-card {
+  // each card keeps its screenshot's shape, as tall as fits
+  --h: min(var(--card-h), calc(86cqw / var(--ar)));
+  --w: calc(var(--h) * var(--ar));
+  flex: 0 0 auto;
+  width: var(--w);
+  scroll-snap-align: center;
+  opacity: 0.45;
+  transform: scale(0.9);
+  transition: opacity 0.4s ease, transform 0.55s $spring;
+
+  // room either side so the first and last can sit in the middle
+  &:first-child { margin-left: max(16px, calc(50cqw - var(--w) / 2)); }
+  &:last-child { margin-right: max(16px, calc(50cqw - var(--w) / 2)); }
+
+  &.is-active { opacity: 1; transform: none; }
+  &:not(.is-active):hover { opacity: 0.75; }
+}
+.pp-strip-shot {
+  position: relative;
   display: block;
   width: 100%;
-  max-width: 460px;
-  height: auto;
-  border-radius: 16px;
-  box-shadow: 0 28px 70px rgba(22, 21, 15, 0.22);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  height: var(--h);
+  padding: 0;
+  border: 1px solid rgba(31, 27, 23, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fafaf9;
+  box-shadow: 0 24px 50px rgba(31, 27, 23, 0.18);
+  cursor: pointer;
+  .is-active > & { cursor: zoom-in; }
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+    pointer-events: none;
+  }
+  &:focus-visible { outline: 3px solid var(--pp-accent); outline-offset: 4px; }
 }
-.pp-gallery-frame:hover .pp-gallery-img {
-  transform: translateY(-4px) scale(1.02);
+// phone screenshots already show the phone, so no card around them
+.pp-strip--phone .pp-strip-shot {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  img { object-fit: contain; filter: drop-shadow(0 18px 26px rgba(31, 27, 23, 0.2)); }
 }
 
-// Phone screenshots (taller than wide): a smaller frame that hugs the picture,
-// so they sit nicely next to the text instead of towering over the page
-.pp-gallery-frame--portrait {
-  width: fit-content;
-  max-width: 100%;
-  padding: clamp(20px, 2.4vw, 34px);
-  justify-self: center;
+// the number in the corner of each card
+.pp-strip-num {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 1;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(31, 27, 23, 0.78);
+  color: #fff;
+  font-family: $font-serif-display;
+  font-style: italic;
+  font-size: 15px;
 }
-.pp-gallery-frame--portrait .pp-gallery-img {
-  width: auto;
-  max-width: 100%;
-  max-height: min(520px, 68vh);
+.pp-strip--phone .pp-strip-num { top: 4%; left: -6px; }
+
+// the caption under the card in focus
+.pp-strip-caption {
+  // at least as wide as a comfortable line, centred under the card
+  width: max(100%, min(460px, 80vw));
+  max-width: min(80vw, 760px);
+  margin: 18px 0 0 50%;
+  font-size: clamp(16px, 1.15vw, 20px);
+  line-height: 1.6;
+  text-align: center;
+  color: rgba(31, 27, 23, 0.85);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 10px);
+  transition: opacity 0.35s ease, transform 0.45s $ease-out, visibility 0.35s;
+  .is-active > & { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 }
 
-.pp-gallery-text {
+.pp-strip-dots {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0 16px;
+  list-style: none;
+
+  button {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(31, 27, 23, 0.2);
+    cursor: pointer;
+    transition: width 0.35s $spring, background 0.2s ease;
+    &:hover { background: rgba(31, 27, 23, 0.4); }
+    &.is-active { width: 30px; background: var(--pp-accent); }
+    &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 3px; }
+  }
+}
+
+/* ════════════════════════════════════════════
+   NOTES: the challenge and what I learned, as sticky notes you can drag
+   ════════════════════════════════════════════ */
+.pp-notes {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  scroll-margin-top: 80px;
+}
+.pp-notes-hint {
+  margin: 0 0 26px;
+  text-align: center;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-size: 15px;
+  color: rgba(31, 27, 23, 0.55);
+}
+.pp-notes-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+}
+.pp-notes-row--single {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 760px;
+  margin: 0 auto;
+}
+.pp-note-drag {
+  position: relative;
+  cursor: grab;
+  touch-action: auto;
+}
+.pp-note {
+  --tilt: -1.5deg;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-.pp-gallery-num {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  color: var(--pp-accent);
-}
-.pp-gallery-caption {
-  margin: 0;
-  font-size: 21px;
-  font-weight: 300;
-  line-height: 1.8;
-  color: color-mix(in srgb, var(--pp-ink) 82%, transparent);
-  max-width: 480px;
-}
+  padding: clamp(30px, 3.4vw, 48px) clamp(24px, 3vw, 42px);
+  background: #fff3b0;
+  border-radius: 2px 2px 18px 2px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 18px 36px rgba(31, 27, 23, 0.14);
+  color: #1A1020;
+  transform: rotate(var(--tilt));
+  transition: transform 0.45s $spring, box-shadow 0.3s ease;
 
-.pp-no-shots {
-  max-width: 640px;
-  margin: 0 auto 100px;
-  padding: 60px 40px;
-  text-align: center;
-  border: 1.5px dashed var(--pp-line);
-  border-radius: 18px;
-  color: var(--pp-ink-soft);
+  // the strip of tape
+  &::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    width: 96px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(26, 16, 32, 0.05);
+    transform: translateX(-50%) rotate(3deg);
+  }
 }
-.pp-no-shots-hint { font-family: var(--font-mono); font-size: 12px; margin-top: 8px; }
-.pp-no-shots code { background: var(--pp-surface); padding: 2px 6px; border-radius: 4px; }
+.pp-note-drag:hover .pp-note {
+  transform: rotate(0deg) translateY(-6px);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 26px 48px rgba(31, 27, 23, 0.18);
+}
+.lh-draggable--dragging .pp-note {
+  transform: rotate(2deg) scale(1.03);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08), 0 34px 60px rgba(31, 27, 23, 0.24);
+}
+.pp-note--blue {
+  --tilt: 1.2deg;
+  background: #c5dbf2;
+  color: #1f3a5c;
+}
+.pp-note-icon {
+  font-size: 30px;
+  line-height: 1;
+  transition: transform 0.4s $spring;
+}
+.pp-note-drag:hover .pp-note-icon { transform: scale(1.15) rotate(-10deg); }
+.pp-note-label {
+  margin: 0;
+  font-family: $font-serif-display;
+  font-style: italic;
+  font-weight: 400;
+  font-size: calc(clamp(38px, 3.8vw, 56px) * var(--font-scale, 1));
+  line-height: 1;
+}
+.pp-note-text {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.75;
+  color: color-mix(in srgb, currentColor 86%, transparent);
+}
 
 /* ════════════════════════════════════════════
-   WHAT WAS HARD / WHAT I LEARNED
+   DESKTOP ICONS: previous, all projects, next
    ════════════════════════════════════════════ */
-.pp-reflect {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 40px 14vh;
+.pp-icons {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 16px;
 }
-.pp-reflect--single {
-  grid-template-columns: minmax(0, 1fr);
-  max-width: 800px;
-}
-.pp-reflect-card {
+.pp-icon {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: clamp(28px, 3.4vw, 48px);
-  border-radius: 28px;
-  background: var(--pp-grey-card);
-  color: var(--pp-ink);
-}
-.pp-reflect-card--dark {
-  background: linear-gradient(160deg, #3d3d44 0%, #1a1a1e 100%);
-  color: #fff;
-}
-.pp-reflect-icon {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.7);
-  font-size: 22px;
-}
-.pp-reflect-card--dark .pp-reflect-icon { background: rgba(255, 255, 255, 0.12); }
-.pp-reflect-label {
-  margin: 4px 0 0;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: clamp(26px, 2.6vw, 36px);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-.pp-reflect-text {
-  margin: 0;
-  font-size: 18.5px;
-  font-weight: 300;
-  line-height: 1.8;
-  color: color-mix(in srgb, currentColor 84%, transparent);
-}
-
-/* Previous / next */
-.pp-next {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 40px 20px;
-  border-top: 1px solid var(--pp-line);
-}
-.pp-next-link {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 6px;
+  padding: 14px 18px 12px;
+  border-radius: 14px;
+  color: var(--pp-ink);
+  text-align: center;
   text-decoration: none;
-  padding: 4px 2px;
-  transition: opacity 0.2s ease;
+  transition: background 0.2s ease;
+
+  .pp-folder-icon {
+    margin-bottom: 6px;
+    filter: drop-shadow(0 8px 14px rgba(31, 27, 23, 0.18));
+    transition: transform 0.4s $spring;
+  }
+  // pointing at a folder: it hops and tilts, like it wants to be opened
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+    .pp-folder-icon { transform: translateY(-8px) rotate(-4deg) scale(1.06); }
+  }
+  &:focus-visible { outline: 2px solid var(--pp-accent); outline-offset: 2px; }
 }
-.pp-next-link:hover { opacity: 0.85; }
-.pp-next-next { text-align: right; margin-left: auto; }
-.pp-next-dir { @include mono-label(10px, 0.2em, 700); color: var(--pp-ink-soft); }
-.pp-next-name {
-  font-family: var(--font-display);
-  font-size: clamp(20px, 3vw, 30px);
-  color: var(--pp-ink);
-  transition: color 0.2s ease;
+.pp-icon-dir {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pp-ink-soft);
 }
-.pp-next-link:hover .pp-next-name {
-  color: var(--pp-ink);
+.pp-icon-name {
+  font-family: $font-serif-display;
+  font-size: clamp(22px, 2.4vw, 30px);
+  line-height: 1.05;
 }
 
 .pp-notfound {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  min-height: 100vh; gap: 24px; font-family: var(--font-body); color: #999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 24px;
+  font-family: var(--font-body);
+  color: #999;
 }
 
 /* ════════════════════════════════════════════
@@ -655,55 +854,66 @@
 .pp-lightbox-nav--next { right: 20px; }
 .pp-lightbox-nav--next:hover { transform: translateY(-50%) translateX(2px); }
 
-/* ════════════════════════════════════════════
-   RESPONSIVE
-   ════════════════════════════════════════════ */
-@include respond($bp-md) {
-  .pp-hero {
-    min-height: auto;
-    padding: 110px 24px 120px;
-  }
-  .pp-hero-inner {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-  .pp-scrollcue { display: none; }
 
-  .pp-gallery-item--text {
-    grid-template-columns: 1fr;
-    gap: 28px;
-  }
-  .pp-gallery-item--flip .pp-gallery-frame,
-  .pp-gallery-item--flip .pp-gallery-text { order: 0; }
-  .pp-gallery-caption { max-width: 100%; }
+/* ════════════════════════════════════════════
+   THINGS POP IN AS THEY SCROLL INTO VIEW
+   (only once the page's script has switched it on, so nothing can stay hidden)
+   ════════════════════════════════════════════ */
+.pp-js [data-reveal] {
+  opacity: 0;
+  transform: translateY(36px) scale(0.96);
+  transition:
+    opacity 0.5s ease var(--d, 0s),
+    transform 0.75s $spring var(--d, 0s);
+}
+.pp-js [data-reveal][data-revealed] {
+  opacity: 1;
+  transform: none;
 }
 
+/* ════════════════════════════════════════════
+   SMALLER SCREENS
+   ════════════════════════════════════════════ */
+@include respond($bp-md) {
+  .pp-menubar-menu { display: none; }
+  .pp-hero { grid-template-columns: 1fr; min-height: 0; padding-top: 12px; }
+  .pp-hero-card { order: -1; }
+  .pp-notes-row { grid-template-columns: 1fr; gap: 40px; }
+
+  // the filmstrip: no hint note, smaller arrows, the cards a bit shorter
+  .pp-strip { --card-h: clamp(220px, 52vh, 520px); }
+  .pp-strip--phone { --card-h: clamp(320px, 60vh, 560px); }
+  .pp-strip-hint { display: none; }
+  .pp-strip-head { justify-content: space-between; }
+}
 @include respond($bp-sm) {
-  .pp-back { top: 16px; left: 16px; padding: 9px 15px; }
-  .pp-hero-title { font-size: clamp(44px, 14vw, 72px); }
+  .pp-menubar { gap: 12px; font-size: 13px; }
+  .pp-menubar-clock { display: none; }
+  .pp-menubar-app { margin-left: auto; }
+  .pp-para { font-size: 16.5px; }
+  .pp-dock { gap: 8px; padding: 8px 10px; }
+  .pp-dock-icon { width: 46px; height: 46px; img { width: 28px; height: 28px; } }
+  .pp-strip-caption { font-size: 15.5px; }
+  .pp-strip-arrows button { width: 42px; height: 42px; }
+  .pp-icons { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+  .pp-icon--all { grid-column: 1 / -1; order: 3; }
+  .pp-icon .pp-folder-icon { width: 64px; height: 54px; }
+}
 
-
-  .pp-body { padding: 56px 24px; }
-  .pp-body-inner { max-width: 100%; }
-
-  .pp-gallery { padding: 3vh 20px 12vh; gap: 9vh; }
-  .pp-reflect { grid-template-columns: 1fr; padding: 0 20px 10vh; }
-
-  .pp-next { padding: 32px 24px 16px; flex-direction: column; gap: 20px; }
-  .pp-next-next { text-align: left; margin-left: 0; }
-
-  .pp-lightbox-nav { width: 40px; height: 40px; font-size: 16px; }
-  .pp-lightbox-nav--prev { left: 10px; }
-  .pp-lightbox-nav--next { right: 10px; }
-  .pp-lightbox-close { top: 16px; right: 16px; }
+// touch screens can't drag the notes (the page scrolls instead), so no hint there
+@media (hover: none) {
+  .pp-notes-hint { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pp-js [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-  .pp-scrollcue-dot { animation: none; }
-  .pp-hero-card { transition: none; transform: none; }
+  .pp-hero-text,
+  .pp-hero-card,
+  .pp-strip-count-now,
+  .pp-strip-hint { animation: none; }
+  .pp-js [data-reveal] { transform: none; transition: opacity 0.2s ease; }
+  .pp-strip-card,
+  .pp-strip-caption { transition: opacity 0.2s ease; }
+  .pp-note,
+  .pp-hero-card,
+  .pp-dock-icon { transition: none; }
 }

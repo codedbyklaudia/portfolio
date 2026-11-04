@@ -23,8 +23,6 @@ export default function CursorTrail() {
     const onMouseMove = (e) => {
       mx = e.clientX;
       my = e.clientY;
-      cursor.style.left = mx + 'px';
-      cursor.style.top = my + 'px';
 
       const now = performance.now();
       if (now - lastSpawn < SPAWN_INTERVAL) return;
@@ -32,11 +30,6 @@ export default function CursorTrail() {
       spawnParticle(mx, my);
     };
     window.addEventListener('mousemove', onMouseMove);
-
-    // Custom cursor dot
-    const cursor = document.createElement('div');
-    cursor.className = 'cursor-main-dot';
-    document.body.appendChild(cursor);
 
     function spawnParticle(x, y) {
       const el = document.createElement('div');
@@ -67,9 +60,9 @@ export default function CursorTrail() {
       }, PARTICLE_LIFE);
     }
 
-    // Hide cursor + stop spawning when leaving window
-    const onLeave = () => { active = false; cursor.style.opacity = '0'; };
-    const onEnter = () => { active = true; cursor.style.opacity = '1'; };
+    // Stop spawning when the mouse leaves the window
+    const onLeave = () => { active = false; };
+    const onEnter = () => { active = true; };
     document.addEventListener('mouseleave', onLeave);
     document.addEventListener('mouseenter', onEnter);
 
@@ -78,7 +71,6 @@ export default function CursorTrail() {
       document.removeEventListener('mouseleave', onLeave);
       document.removeEventListener('mouseenter', onEnter);
       container.querySelectorAll('.trail-particle').forEach(n => n.remove());
-      document.body.removeChild(cursor);
     };
   }, []);
 

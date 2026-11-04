@@ -1,0 +1,104 @@
+// ── The language switch ──
+// The page blurs out, "hello" in the old language slides away and the new one rises into its
+// place, the words underneath change, and the page clears again.
+
+.lh-lang-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  pointer-events: all; // no clicks while the words change underneath
+  background: rgba(245, 243, 239, 0.55);
+  animation: lhLangVeil 2.2s ease both;
+}
+// the page blurs out, holds while the words change, and clears again
+@keyframes lhLangVeil {
+  0%   { backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); background: rgba(245, 243, 239, 0); }
+  25%, 70% { backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); background: rgba(245, 243, 239, 0.55); }
+  100% { backdrop-filter: blur(0); -webkit-backdrop-filter: blur(0); background: rgba(245, 243, 239, 0); }
+}
+
+.lh-lang-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  animation: lhLangCard 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lhLangCard {
+  0%   { opacity: 0; transform: scale(0.94); }
+  20%, 75% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
+// the greeting: the old one slides up and away, the new one rises into its place
+.lh-lang-hello {
+  position: relative;
+  display: grid;
+  // clip only above and below (the words slide vertically); italic letters and accents
+  // are free to lean out at the sides
+  clip-path: inset(0 -50vw);
+  padding: 0.2em 0.35em 0.25em;
+  font-family: var(--font-decor-alt);
+  font-style: italic;
+  font-size: clamp(56px, 10vw, 140px);
+  line-height: 1.15;
+  color: var(--black);
+}
+.lh-lang-hello-word {
+  grid-area: 1 / 1;
+  // italic letters lean past the end of the word, and the blur cuts off anything
+  // outside the box, so give the leaning tails room inside it
+  padding: 0 0.25em;
+  text-align: center;
+  white-space: nowrap;
+}
+.lh-lang-hello-word--out {
+  animation: lhHelloOut 2.2s cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+.lh-lang-hello-word--in {
+  animation: lhHelloIn 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes lhHelloOut {
+  0%, 30% { transform: translateY(0); opacity: 1; filter: blur(0); }
+  48%, 100% { transform: translateY(-110%); opacity: 0; filter: blur(6px); }
+}
+@keyframes lhHelloIn {
+  0%, 38% { transform: translateY(110%); opacity: 0; filter: blur(6px); }
+  60%, 100% { transform: translateY(0); opacity: 1; filter: blur(0); }
+}
+
+.lh-lang-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--black);
+  opacity: 0;
+  animation: lhLangName 2.2s ease both;
+  img {
+    border-radius: 3px;
+  }
+}
+@keyframes lhLangName {
+  0%, 45% { opacity: 0; transform: translateY(8px); }
+  62%, 100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lh-lang-overlay,
+  .lh-lang-card,
+  .lh-lang-hello-word,
+  .lh-lang-name {
+    animation-duration: 0.01ms !important;
+  }
+  .lh-lang-hello-word--out { display: none; }
+}

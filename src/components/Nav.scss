@@ -103,3 +103,16 @@
   .nb-icon { display: none; }
   .nb-clock { display: none; }
 }
+// Phones: the dock does the navigating, so the menu bar keeps just the logo and the
+// "Get in touch" button (the full bar was wider than the screen and zoomed the page out)
+@media (max-width: 760px) {
+  .nav {
+    padding: 0 16px;
+    overflow: hidden;
+  }
+  .nb-menu,
+  .nb-icon,
+  .nb-clock {
+    display: none;
+  }
+}

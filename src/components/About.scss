@@ -2,9 +2,19 @@
 
 @use './sectionTheme' as theme;
 
-// Colours come from _sectionTheme.scss (shared with the footer)
-$a-bg: theme.$bg;
+// Colours come from _sectionTheme.scss: a grey a little darker than the shared
+// one (theme.$bg) around the section, and a white Notes window
+$a-bg: #c9c8c5;
 $a-ink: theme.$ink;
+
+// the Notes window, in white
+$a-paper: #fff;                       // the page
+$a-chrome: rgba(250, 250, 251, 0.9);  // the title bar
+$a-sidebar: rgba(248, 248, 249, 0.8); // the sidebar
+$a-card: #fafaf7;                     // the "At a glance" card
+$a-chip: #fff;
+$a-note: #fff3b0;                     // the footer's yellow sticky note
+$a-note-ink: #1A1020;                        // the little icon tiles
 $a-active: theme.$active;            // buttons and the selected tab
 $a-active-text: theme.$accent-text;  // blue used for hovered text
 
@@ -12,37 +22,67 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
   background: $a-bg;
   border-top: 1px solid rgba($a-ink, 0.12);
 }
-/* Intro */
+/* Intro: in the tall serif of the footer's wordmark */
 .about-intro {
-  padding: 100px 56px 90px;
-  max-width: 90vw;
-  margin: 0 15vw;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 120px clamp(20px, 4vw, 64px) 110px;
 }
-.about-reveal-text {
+// a little pill above the text, with a spinning star
+.about-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 36px;
+  padding: 9px 18px 9px 14px;
   font-family: var(--font-body);
-  font-size: calc(clamp(80px, 4vw, 115px) * var(--font-scale, 1));
-  font-weight: 400;
-  line-height: 1.55;
-  max-width: 70vw;
-  margin: 0;
+  font-size: calc(15px * var(--font-scale, 1));
+  font-weight: 600;
+  color: $a-ink;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba($a-ink, 0.08);
+  transform: rotate(-2deg);
 }
+.about-kicker-star {
+  display: inline-block;
+  font-size: 18px;
+  color: $a-active;
+  animation: about-spin 6s linear infinite;
+}
+@keyframes about-spin { to { transform: rotate(360deg); } }
+
+.about-reveal-text {
+  max-width: 1240px;
+  margin: 0;
+  font-family: $font-serif-display;
+  font-size: calc(clamp(48px, 5.6vw, 104px) * var(--font-scale, 1));
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: -0.015em;
+}
+// each word lights up as you scroll, and rises a touch as it does
 .about-reveal-text span {
-  color: rgba($a-ink, 0.26);
-  transition: color 0.4s ease;
+  display: inline-block;
+  white-space: pre;
+  color: rgba($a-ink, 0.22);
+  transform: translateY(0.12em);
+  transition: color 0.4s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .about-reveal-text span.is-active {
   color: $a-ink;
+  transform: none;
 }
 
-/* Notes-window wrapper */
+/* Notes-window wrapper: the full width of the screen, with the same edges as the other sections */
 .about-notes-wrap {
-  padding: 0 56px 100px;
-  max-width: 80vw;
-  margin-left: 10vw;
+  padding: 0 clamp(20px, 4vw, 64px) 100px;
+  max-width: none;
+  margin: 0;
 }
 
 .about-notes-window {
-  background: #fff;
+  background: $a-paper;
   border-radius: 14px;
   overflow: hidden;
   box-shadow:
@@ -59,8 +99,8 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
   align-items: center;
   gap: 14px;
   padding: 0 16px;
-  background: rgba(250,250,251,0.9);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: $a-chrome;
+  border-bottom: 1px solid rgba($a-ink, 0.08);
 }
 .an-traffic { display: flex; gap: 8px; }
 .an-dot { width: 12px; height: 12px; border-radius: 50%; border: 0.5px solid rgba(0,0,0,0.1); }
@@ -85,8 +125,8 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
 .about-notes-sidebar {
   width: 210px;
   flex-shrink: 0;
-  background: rgba(248,248,249,0.8);
-  border-right: 1px solid rgba(0,0,0,0.06);
+  background: $a-sidebar;
+  border-right: 1px solid rgba($a-ink, 0.08);
   padding: 20px 12px;
 }
 .an-sidebar-label {
@@ -169,22 +209,46 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
   to   { opacity: 1; transform: none; }
 }
 
+/* Fun facts: a row of colourful notes, slightly crooked, that straighten up on hover */
 .an-fact-list {
-  list-style:circle;
+  list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 8px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 28px;
+}
+.an-fact {
+  --tilt: -2deg;
   display: flex;
   flex-direction: column;
-  padding-left: 20px;
   gap: 14px;
+  padding: 24px 22px 28px;
+  border-radius: 6px;
+  background: #fff3b0;
+  box-shadow: 0 10px 24px rgba($a-ink, 0.08), 0 2px 5px rgba($a-ink, 0.05);
+  font-family: var(--font-body);
+  @include scaled-font(16.5px);
+  line-height: 1.55;
+  color: #2b2620;
+  transform: rotate(var(--tilt));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+
+  &:nth-child(2) { --tilt: 1.5deg; background: #c5dbf2; }
+  &:nth-child(3) { --tilt: -1deg; background: #f6d3dc; }
+  &:nth-child(4) { --tilt: 2deg; background: #d3ead0; }
+
+  &:hover {
+    transform: rotate(0deg) translateY(-8px);
+    box-shadow: 0 20px 36px rgba($a-ink, 0.14), 0 4px 10px rgba($a-ink, 0.06);
+  }
 }
-.an-fact-list li {
-  font-family: var(--font-geomini);
-  @include scaled-font(18px);
-  font-weight: 300;
-  color: #444;
-  line-height: 1.6;
-  padding-left: 4px;
+.an-fact-num {
+  font-family: $font-serif-display;
+  font-style: italic;
+  font-size: 56px;
+  line-height: 0.9;
+  color: rgba($a-ink, 0.75);
 }
 
 /* Story block — 2 col */
@@ -371,10 +435,11 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
 }
 
 .about-block-title {
-  font-family: var(--font-geomini);
-  font-size: calc(clamp(26px, 3vw, 40px) * var(--font-scale, 1));
+  font-family: $font-serif-display;
+  font-style: italic;
+  font-size: calc(clamp(40px, 4.4vw, 68px) * var(--font-scale, 1));
   font-weight: 400;
-  line-height: 1.1;
+  line-height: 1;
   color: var(--ink);
   margin-top: 50px;
   margin-bottom: 24px;
@@ -409,7 +474,7 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
 }
 .about-fact {
   padding: 24px 20px;
-  background: #fff;
+  background: $a-paper;
   border-right: 1px solid var(--ink);
   display: flex;
   flex-direction: column;
@@ -508,6 +573,7 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
 
 @include respond($bp-sm) {
   .about-intro  { padding: 64px 24px 48px; }
+  .about-reveal-text { font-size: calc(clamp(38px, 11vw, 60px) * var(--font-scale, 1)); line-height: 1.08; }
   .about-notes-wrap { padding: 0 16px 64px; }
   .about-story  { gap: 56px; }
   .about-block  { grid-template-columns: 1fr; gap: 28px; }
@@ -517,4 +583,112 @@ $a-active-text: theme.$accent-text;  // blue used for hovered text
   .about-fact:nth-child(2) { border-right: none; }
   .about-fact:nth-child(3) { border-right: 1px solid var(--ink); border-top: 1px solid var(--ink); }
   .about-fact:nth-child(4) { border-top: 1px solid var(--ink); }
+}
+// No photos: the title sits in the middle, the text beside a small card
+.about-block-title--center {
+  text-align: center;
+  margin-top: 24px;
+  margin-bottom: 40px;
+}
+.about-block--text-only {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: clamp(32px, 4vw, 64px);
+  align-items: start;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.about-side-card {
+  position: sticky;
+  top: 110px;
+  padding: 30px 24px 20px;
+  background: $a-note;
+  border-radius: 2px 2px 14px 2px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), 0 14px 28px rgba($a-ink, 0.16);
+  transform: rotate(-2.5deg);
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &:hover { transform: rotate(0deg) scale(1.03); }
+
+  // a strip of tape holding it to the page
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 72px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba($a-ink, 0.05);
+    transform: translateX(-50%) rotate(3deg);
+  }
+}
+.about-side-title {
+  margin: 0 0 12px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba($a-note-ink, 0.55);
+}
+.about-side-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px dashed rgba($a-note-ink, 0.14);
+    font-family: var(--font-body);
+    @include scaled-font(15px);
+    font-weight: 500;
+    line-height: 1.45;
+    color: $a-note-ink;
+  }
+  li:first-child { border-top: 0; padding-top: 0; }
+}
+// just the emoji, no tile, and it pops when you point at its line
+.about-side-icon {
+  flex: none;
+  font-size: 16px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.about-side-list li:hover .about-side-icon { transform: scale(1.25) rotate(-10deg); }
+.about-side-status {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px dashed rgba($a-note-ink, 0.14);
+  font-family: var(--font-body);
+  @include scaled-font(13.5px);
+  font-weight: 600;
+  color: $a-note-ink;
+}
+.about-side-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22b04a;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(#22b04a, 0.18);
+}
+
+@media (max-width: 900px) {
+  .about-block--text-only { grid-template-columns: 1fr; }
+  .about-side-card { position: static; }
+}
+.about-story:has(.about-block-title--center) {
+  gap: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-kicker-star { animation: none; }
+  .about-reveal-text span { transform: none; }
+  .an-fact, .about-side-card { transition: none; }
 }

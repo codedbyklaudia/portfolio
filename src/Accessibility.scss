@@ -13,14 +13,14 @@ html[data-contrast="high"] {
    The decorative footer wordmark is left alone (the font is much wider
    and would be cut off). */
 html[data-dyslexia="true"] body,
-html[data-dyslexia="true"] body *:not(.footer-wordmark-text):not(svg *) {
+html[data-dyslexia="true"] body *:not(.footer-wordmark-text, .footer-wordmark-text *):not(svg *) {
   font-family: 'OpenDyslexic', 'Comic Sans MS', 'Trebuchet MS', sans-serif !important;
   font-style: normal !important;
   text-transform: none !important;
 }
 
 /* Looser text spacing */
-html[data-text-spacing="true"] body *:not(.footer-wordmark-text):not(svg *) {
+html[data-text-spacing="true"] body *:not(.footer-wordmark-text, .footer-wordmark-text *):not(svg *) {
   letter-spacing: 0.06em !important;
   word-spacing: 0.12em !important;
 }

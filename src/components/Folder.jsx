@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import './Folder.scss';
 
 const darkenColor = (hex, percent) => {
@@ -27,6 +28,7 @@ const Folder = ({
   open: controlledOpen,
   onToggle,
 }) => {
+  const { t } = useLanguage();
   const maxItems = 3;
   const papers = items.slice(0, maxItems);
   while (papers.length < maxItems) {
@@ -101,7 +103,7 @@ const Folder = ({
         tabIndex={0}
         role="button"
         aria-expanded={open}
-        aria-label={open ? 'Close folder' : 'Open folder'}
+        aria-label={t(open ? 'folder.close' : 'folder.open')}
       >
         <div className="folder__back">
           {papers.map((item, i) => (

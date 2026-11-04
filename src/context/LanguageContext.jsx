@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import LanguageOverlay from '../components/LanguageOverlay';
 import { translations } from '../i18n/translations';
 
 const LanguageContext = createContext(null);
@@ -27,8 +28,26 @@ export function LanguageProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('lang', lang);
+    document.title = translations['meta.title'][lang] || translations['meta.title'].en;
     localStorage.setItem(STORAGE_KEY, lang);
   }, [lang]);
+
+  // Switching with the transition: the words change while the page is blurred
+  const [transition, setTransition] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const switchLang = (code) => {
+    if (code === lang || transition) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setLang(code);
+      return;
+    }
+    setTransition({ from: lang, to: code });
+    timers.current = [
+      setTimeout(() => setLang(code), 1000),
+      setTimeout(() => setTransition(null), 2200),
+    ];
+  };
 
   const t = (key) => {
     const entry = translations[key];
@@ -37,8 +56,9 @@ export function LanguageProvider({ children }) {
   };
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t }}>
+    <LanguageContext.Provider value={{ lang, setLang, switchLang, switching: Boolean(transition), t }}>
       {children}
+      {transition && <LanguageOverlay from={transition.from} to={transition.to} target={LANGUAGES.find((l) => l.code === transition.to)} />}
     </LanguageContext.Provider>
   );
 }

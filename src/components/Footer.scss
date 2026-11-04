@@ -2,540 +2,816 @@
 
 @use './sectionTheme' as theme;
 
-// Colours come from _sectionTheme.scss (shared with the About section)
-$f-bg: theme.$bg;
-$f-ink: theme.$ink;
-$f-muted: rgba(theme.$ink, 0.62);
-$f-faint: rgba(theme.$ink, 0.5);
-$f-line: rgba(theme.$ink, 0.14);
-$f-accent: theme.$accent;            // fills and active states
-$f-accent-text: theme.$accent-text;  // hover text
+// One dark, warm brown with cream text, plus a sticky note, little shapes,
+// wiggly underlines, two widgets in the About section's grey and a big serif
+// wordmark. The accent is the current project's colour (the site's blue at home).
+$f-bg: theme.$brown;                  // a dark, warm brown (the hero's #1C1611, softened)
+$f-text: theme.$cream;                // cream text on the brown
+$f-text-muted: rgba($f-text, 0.66);
+$f-rule: rgba($f-text, 0.16);
+
+// inside the white widgets and on the sticky note
+$f-ink: #1A1020;                      // the site's --black
+$f-muted: rgba($f-ink, 0.58);
+$f-line: rgba($f-ink, 0.14);
+$f-note: #fff3b0;                     // sticky-note yellow, as on the Projects window
+$f-pink: #f27aa0;
+$f-yellow: #f5b83d;
+$f-green: #34b67a;
+$f-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
 
 /* FOOTER */
 .footer {
+  --f-accent: var(--proj-color, #{theme.$accent});
+  position: relative;
   background: $f-bg;
-  color: $f-ink;
-  padding: 0 56px;
+  color: $f-text;
 }
+
 .footer-inner {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 64px 0 0;
   display: flex;
   flex-direction: column;
-}
-
-/* BACK TO TOP */
-.footer-top-btn {
-  align-self: flex-end;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-decor-alt3);
-  @include scaled-font(12.5px);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: $f-ink;
-  background: rgba(255, 255, 255, 0.7);
-  border: none;
-  border-radius: 999px;
-  padding: 9px 16px;
-  margin-bottom: 40px;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.footer-top-btn:hover {
-  background: $f-ink;
-  color: #fff;
-  transform: translateY(-2px);
-}
-
-.footer-top-btn:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 3px;
+  padding: clamp(56px, 7vw, 96px) clamp(20px, 4vw, 64px) 0;
 }
 
 
 /* ============================================================
-   FOOTER GRID
+   THE NAME, AND THE COLUMNS
    ============================================================ */
 
-.footer-grid {
+.footer-top {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 40px;
-  padding-bottom: 72px;
+  // the note, the link columns in the middle, and the widgets at the end
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 'note cols widgets';
+  align-items: start;
+  gap: 40px clamp(40px, 5vw, 96px);
+  padding-bottom: clamp(48px, 6vw, 88px);
+}
+
+.footer-brand { grid-area: note; }
+.footer-cols { grid-area: cols; justify-self: center; }
+.footer-widgets { grid-area: widgets; }
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* the sticky note, with a strip of tape */
+.footer-note {
+  position: relative;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 300px;
+  margin: 10px 0 0;
+  padding: 22px 20px 18px;
+  list-style: none;
+  background: $f-note;
+  border-radius: 2px 2px 14px 2px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), 0 14px 28px rgba(0, 0, 0, 0.28);
+  transform: rotate(-2.5deg);
+  transition: transform 0.4s $f-spring;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 72px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba($f-ink, 0.05);
+    transform: translateX(-50%) rotate(3deg);
+  }
+
+  &:hover {
+    transform: rotate(0deg) scale(1.03);
+  }
+}
+
+.footer-status {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-family: var(--font-body);
+  @include scaled-font(13.5px);
+  font-weight: 500;
+  line-height: 1.45;
+  color: $f-ink;
+}
+
+.footer-status-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22b04a;
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(#22b04a, 0.18);
+}
+
+.footer-cols {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: start;
+  gap: 36px clamp(40px, 5vw, 96px);
 }
 
 .footer-col {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
+  min-width: 0;
 }
 
-
-/* ============================================================
-   COLUMN LABELS
-   ============================================================ */
-
-.footer-col-label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  @include mono-label(11px, $weight: 600);
-  color: $f-faint;
-}
-
-.footer-col-label svg {
-  flex-shrink: 0;
-}
-
-
-/* GENERIC FOOTER LINKS */
-
-.footer-link {
-  align-self: flex-start;
-  font-family: var(--font-decor-alt3);
-  @include scaled-font(14px);
-  font-weight: 500;
-  color: $f-ink;
-  text-decoration: none;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: default;
-}
-
-a.footer-link {
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-a.footer-link:hover {
-  color: $f-accent-text;
-}
-
-a.footer-link:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 3px;
-}
-
-
-/* ============================================================
-   SETTINGS
-   ============================================================ */
-
-.footer-setting-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  align-self: flex-start;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.footer-setting-icon {
-  flex-shrink: 0;
-  color: $f-muted;
-  transition: color 0.2s ease;
-}
-
-.footer-setting-row:hover .footer-setting-icon {
-  color: $f-accent-text;
-}
-
-/* ============================================================
-   SOCIAL LINKS
-   ============================================================ */
-
-.footer-socials {
+.footer-heading {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 6px;
+  margin: 0;
+  font-family: var(--font-body);
+  @include scaled-font(17px);
+  font-weight: 700;
+  color: $f-text;
+
+  &::before {
+    content: '';
+    flex-shrink: 0;
+    width: 13px;
+    height: 13px;
+    transition: transform 0.5s $f-spring;
+  }
+
+  .footer-col:hover &::before {
+    transform: rotate(180deg) scale(1.2);
+  }
 }
 
-.footer-social-link {
+.footer-heading--circle::before { background: var(--f-accent); border-radius: 50%; }
+.footer-heading--square::before { background: $f-pink; border-radius: 3px; transform: rotate(12deg); }
+.footer-heading--star::before {
+  background: $f-yellow;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  width: 16px;
+  height: 16px;
+}
+.footer-heading--triangle::before {
+  background: $f-green;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.footer-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-list li {
+  max-width: 100%;
+}
+
+.footer-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  color: $f-ink;
+  gap: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;            // the email wraps instead of running off a phone screen
+  padding: 0 0 3px;
+  font-family: var(--font-body);
+  @include scaled-font(17px);
+  font-weight: 500;
+  line-height: 1.45;
+  color: $f-text-muted;
   text-decoration: none;
-  border: 1px solid $f-line;
-  border-radius: 50%;
-  transition:
-    color 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
-}
-
-.footer-social-link:hover {
-  color: #fff;
-  background: $f-ink;
-  border-color: $f-ink;
-  transform: translateY(-2px);
-}
-
-.footer-social-link:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 2px;
-}
-
-/* LANGUAGE DROPDOWN */
-.footer-lang-dropdown {
-  position: relative;
-  width: 120px;
-  min-width: 120px;
-}
-
-/* Trigger */
-.footer-lang-trigger {
-  width: 120px;
-  height: 34px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 7px;
-  padding: 5px 8px;
-  font-family: var(--font-decor-alt3);
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 500;
-  color: $f-ink;
-  background: transparent;
-  border: 0.2px solid $f-line;
-  border-radius: 7px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: background 0.2s ease;
-}
-
-.footer-lang-trigger:hover {
-  background: rgba(theme.$ink, 0.06);
-}
-
-.footer-lang-trigger:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 2px;
-}
-
-/* Flags */
-.footer-lang-trigger .footer-lang-flag,
-.footer-lang-options .footer-lang-flag {
-  width: 20px !important;
-  height: 14px !important;
-  min-width: 20px !important;
-  min-height: 14px !important;
-  max-width: 20px !important;
-  max-height: 14px !important;
-  display: block !important;
-  object-fit: cover !important;
-  object-position: center;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 2px;
-  flex: 0 0 20px !important;
-  box-sizing: border-box;
-}
-
-/* Language text */
-.footer-lang-trigger > span:not(.footer-lang-chevron) {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  font-size: 12px;
-  text-align: left;
-}
-
-/* Chevron */
-.footer-lang-chevron {
-  flex: 0 0 auto;
-  font-size: 10px;
-  line-height: 1;
-  color: $f-muted;
-  transition: transform 0.2s ease;
-}
-
-.footer-lang-chevron--open {
-  transform: rotate(180deg);
-}
-
-/* Dropdown */
-.footer-lang-options {
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 6px);
-  width: 120px;
-  min-width: 120px;
-  max-width: 120px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 3px;
-  background: $f-bg;
-  border: 0.2px solid $f-line;
-  border-radius: 8px;
-  overflow: hidden;
-  z-index: 30;
-}
-
-/* Options */
-.footer-lang-option {
-  width: 100%;
-  height: 28px;
-  min-height: 28px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 6px;
-  font-family: var(--font-decor-alt3);
-  font-size: 11.5px;
-  line-height: 1;
-  font-weight: 500;
-  color: $f-ink;
-  background: transparent;
+  background: none;
   border: none;
-  border-radius: 5px;
-  text-align: left;
   cursor: pointer;
-  overflow: hidden;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
+  transition: color 0.2s ease;
+
+  // a wiggly, hand-drawn underline that wipes in on hover
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -3px;
+    height: 6px;
+    background: color-mix(in srgb, var(--f-accent) 60%, #fff);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='6' viewBox='0 0 16 6'%3E%3Cpath d='M0 3 Q4 0 8 3 T16 3' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 6px;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='6' viewBox='0 0 16 6'%3E%3Cpath d='M0 3 Q4 0 8 3 T16 3' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E") repeat-x 0 0 / 16px 6px;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.35s ease;
+  }
+
+  &:hover,
+  &.is-on {
+    color: $f-text;
+  }
+
+  &:hover::after,
+  &:focus-visible::after,
+  &.is-on::after {
+    clip-path: inset(0 0 0 0);
+    animation: footer-squiggle 0.6s linear infinite;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--f-accent);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
 }
 
-.footer-lang-option:hover {
-  background: rgba(theme.$ink, 0.08);
+@keyframes footer-squiggle {
+  to {
+    -webkit-mask-position: 16px 0;
+    mask-position: 16px 0;
+  }
 }
 
-.footer-lang-option--active {
-  background: rgba(theme.$ink, 0.12);
-  font-weight: 600;
-}
+.footer-link-arrow {
+  opacity: 0;
+  transform: translate(-3px, 3px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
 
-/* Option text */
-.footer-lang-option > span:not(.footer-lang-check) {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* Check mark */
-.footer-lang-check {
-  flex: 0 0 auto;
-  font-size: 11px;
-}
-
-
-/* ACCESSIBILITY BUTTON */
-
-.footer-a11y {
-  position: relative;
-  align-self: flex-start;
-}
-
-button.footer-setting-row {
-  font-family: var(--font-decor-alt3);
-  @include scaled-font(14px);
-  font-weight: 500;
-  color: $f-ink;
-  transition:
-    color 0.2s ease,
-    transform 0.2s ease;
-}
-
-button.footer-setting-row:hover {
-  transform: translateX(2px);
-}
-
-button.footer-setting-row:hover span {
-  color: $f-accent-text;
-}
-
-button.footer-setting-row:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 4px;
-  border-radius: 4px;
+  .footer-link:hover & {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 
-/* Legal Text*/
-.footer-copy,
-.footer-built {
-  font-family: var(--font-decor-alt3);
-  @include scaled-font(12px);
-  letter-spacing: 0.02em;
-  color: $f-muted;
-}
+/* ============================================================
+   THE WIDGETS: Control Centre and the song, side by side
+   ============================================================ */
 
-
-/* LEGAL BAR */
-.footer-legal {
+.footer-widgets {
+  justify-self: end;
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 18px;
-  padding-bottom: 32px;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 18px;
 }
 
-
-/* ACCESSIBILITY POPOVER */
-.footer-a11y-wrap {
-  overflow: visible;
-}
-
-.footer-a11y-menu {
-  position: absolute;
-  top: calc(100% + 12px); // opens downward, over the legal line
-  left: 0;
-  width: 270px;
-  background: #fff;
-  color: $f-ink;
-  border: 1px solid $f-line;
-  border-radius: 12px;
-  padding: 14px 16px 16px;
+/* Control Centre: languages and accessibility, always open */
+.footer-control {
+  width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  box-shadow: 0 16px 40px rgba(theme.$ink, 0.16);
-  z-index: 40;
+  gap: 16px;
+  padding: 18px 18px 16px;
+  background: theme.$bg;              // the About section's grey
+  border: 1px solid rgba($f-ink, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 18px 40px rgba(0, 0, 0, 0.3);
+  transform: rotate(-1.2deg);
+  transition: transform 0.4s $f-spring;
+
+  &:hover {
+    transform: rotate(0deg) translateY(-3px);
+  }
 }
 
-.footer-a11y-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: 12px;
-  border-bottom: 1px solid $f-line;
-  font-family: var(--font-decor-alt3);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.footer-a11y-close {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  margin-right: -4px;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: $f-muted;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.footer-a11y-close:hover {
-  background: rgba(theme.$ink, 0.08);
+.footer-control .footer-heading {
+  @include scaled-font(15px);
   color: $f-ink;
 }
 
-.footer-a11y-close:focus-visible {
-  outline: 2px solid $f-accent;
-  outline-offset: 2px;
+// the languages, all visible: a row of flags
+.footer-langs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.footer-a11y-row {
+.footer-lang {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: $f-muted;
+  background: rgba($f-ink, 0.04);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.25s $f-spring;
+
+  img {
+    display: block;
+    width: 22px;
+    height: 15px;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba($f-ink, 0.08);
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    background: rgba($f-ink, 0.07);
+  }
+
+  &.is-active {
+    color: $f-ink;
+    background: color-mix(in srgb, var(--f-accent) 12%, #fff);
+    border-color: var(--f-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--f-accent);
+    outline-offset: 2px;
+  }
+}
+
+// text size: A− 100% A+
+.footer-size {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-body);
-  @include scaled-font(12.5px);
+  @include scaled-font(13.5px);
   color: $f-ink;
 }
 
-.footer-a11y-steppers {
+.footer-size-steppers {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  background: rgba($f-ink, 0.05);
+  border-radius: 999px;
+
+  button {
+    width: 30px;
+    height: 26px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    color: $f-ink;
+    background: #fff;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba($f-ink, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s $f-spring;
+
+    &:hover { transform: scale(1.08); }
+
+    &:focus-visible {
+      outline: 2px solid var(--f-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  output {
+    min-width: 40px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: $f-muted;
+  }
 }
 
-.footer-a11y-steppers button {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 7px;
-  background: rgba(theme.$ink, 0.07);
+// the reading options, as on/off switches
+.footer-switches {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid $f-line;
+}
+
+.footer-switch {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-body);
+  @include scaled-font(13.5px);
   color: $f-ink;
-  font-size: 12px;
-  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
 }
 
-.footer-a11y-steppers button:hover {
-  background: rgba(theme.$ink, 0.13);
+.footer-switch-track {
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 21px;
+  border-radius: 999px;
+  background: rgba($f-ink, 0.14);
+  transition: background 0.25s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba($f-ink, 0.25);
+    transition: transform 0.3s $f-spring;
+  }
+
+  input:checked + & {
+    background: var(--f-accent);
+  }
+
+  input:checked + &::after {
+    transform: translateX(15px);
+  }
+
+  input:focus-visible + & {
+    outline: 2px solid var(--f-accent);
+    outline-offset: 2px;
+  }
 }
 
-.footer-a11y-toggle {
-  cursor: pointer;
-}
-
-.footer-a11y-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: $f-accent;
-}
-
-.footer-a11y-reset {
+.footer-reset {
   align-self: flex-start;
+  padding: 0;
   font-family: var(--font-mono);
   font-size: 10.5px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: $f-accent-text;
+  color: $f-muted;
   background: none;
-  border: 1px solid rgba(74, 127, 181, 0.4);
-  border-radius: 6px;
-  padding: 5px 10px;
+  border: none;
   cursor: pointer;
-  transition: background 0.15s ease;
+
+  &:hover {
+    color: var(--f-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--f-accent);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
 }
 
-.footer-a11y-reset:hover {
-  background: rgba(74, 127, 181, 0.1);
+
+/* ============================================================
+   THE SONG, AS A MUSIC WIDGET (like the one on the desktop)
+   ============================================================ */
+
+.footer-music {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 14px;
+  background: theme.$bg;              // the About section's grey
+  border: 1px solid rgba($f-ink, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 18px 40px rgba(0, 0, 0, 0.3);
+  transform: rotate(1.5deg);
+  transition: transform 0.4s $f-spring;
+
+  &:hover {
+    transform: rotate(0deg) translateY(-3px);
+  }
 }
 
+.footer-music-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
 
-/* WORDMARK: solid ink, no fade */
-.footer-wordmark {
-  border-top: 1px solid $f-line;
-  padding: 24px 0 8px;
+// the cover: a record in a sleeve of the accent colour, spinning while it plays
+.footer-music-art {
+  position: relative;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--f-accent) 70%, #fff), var(--f-accent));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
   overflow: hidden;
+}
+
+.footer-music-record {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #fff 0 4px, $f-pink 5px 12px, transparent 13px),
+    repeating-radial-gradient(circle, #1d1a24 0 2px, #2b2733 2px 3px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  animation: footer-record 3.2s linear infinite;
+  animation-play-state: paused;
+
+  .is-playing & {
+    animation-play-state: running;
+  }
+}
+
+@keyframes footer-record {
+  to { transform: rotate(360deg); }
+}
+
+.footer-music-info {
+  min-width: 0;
+
+  p { margin: 0; }
+}
+
+.footer-music-title {
+  font-family: var(--font-body);
+  @include scaled-font(16px);
+  font-weight: 700;
+  color: $f-ink;
+}
+
+.footer-music-artist {
+  font-family: var(--font-body);
+  @include scaled-font(13px);
+  color: $f-muted;
+}
+
+.footer-music-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: rgba($f-ink, 0.08);
+  overflow: hidden;
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--f-accent);
+    transition: width 0.25s linear;
+  }
+}
+
+.footer-music-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footer-music-time {
+  min-width: 38px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: $f-muted;
+  font-variant-numeric: tabular-nums;
+
+  &:last-child { text-align: right; }
+}
+
+.footer-music-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    color: $f-ink;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.25s $f-spring;
+
+    &:hover { background: rgba($f-ink, 0.06); }
+
+    &:focus-visible {
+      outline: 2px solid var(--f-accent);
+      outline-offset: 2px;
+    }
+  }
+
+  .footer-music-play {
+    width: 42px;
+    height: 42px;
+    color: #fff;
+    background: $f-ink;
+
+    &:hover {
+      background: var(--f-accent);
+      transform: scale(1.08);
+    }
+  }
+}
+
+
+/* ============================================================
+   THE SMALL PRINT
+   ============================================================ */
+
+.footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding: 20px 0;
+  border-top: 1px solid $f-rule;
+  font-family: var(--font-body);
+  @include scaled-font(13px);
+  color: $f-text-muted;
+}
+
+.footer-legal-right {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 24px;
+}
+
+.footer-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: $f-text;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--f-accent);
+    outline-offset: 3px;
+    border-radius: 999px;
+  }
+}
+
+.footer-top-circle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: $f-text;
+  color: $f-bg;
+  transition: background 0.2s ease;
+
+  .footer-top-btn:hover & {
+    background: #fff;
+  }
+
+  .footer-top-btn:hover & svg {
+    animation: footer-hop 0.6s $f-spring infinite alternate;
+  }
+}
+
+@keyframes footer-hop {
+  from { transform: translateY(2px); }
+  to { transform: translateY(-4px); }
+}
+
+
+/* THE WORDMARK: big and elegant, in a tall serif, with a round logo in the
+   bottom-right corner. The letters rise in one by one, and hop in colour on hover. */
+.footer-sign {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(16px, 3vw, 56px);
+  padding: clamp(8px, 2vw, 24px) 0 clamp(20px, 3vw, 44px);
+}
+
+.footer-wordmark {
+  flex: 1;
+  min-width: 0;
+  container-type: inline-size;
+  overflow: hidden;                   // the letters rise in from below this edge
 }
 
 .footer-wordmark-text {
   display: block;
-  font-family: var(--font-decor-alt3);
-  font-weight: 700;
-  font-size: clamp(110px, 15vw, 190px);
-  line-height: 0.88;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: $f-ink;
+  font-family: $font-serif-display;
+  font-weight: 400;
+  // sized to its own width, so the name fills it edge to edge
+  font-size: 20.1cqi;
+  line-height: 0.95;
+  padding-bottom: 0.2em;              // room for the tail of the y
+  letter-spacing: -0.035em;
   white-space: nowrap;
+  color: $f-text;
+}
+
+.footer-wordmark-char {
+  display: inline-block;
+  transform: translateY(135%);
+  transition: transform 0.4s $f-spring, color 0.2s ease;
+
+  .footer--in & {
+    transform: translateY(0);
+    transition: transform 0.9s $f-spring calc(var(--i) * 55ms), color 0.2s ease;
+  }
+
+  .footer--in &:hover {
+    transform: translateY(-8%) rotate(-4deg);
+    transition: transform 0.3s $f-spring, color 0.2s ease;
+  }
+
+  &:nth-child(5n + 1):hover { color: color-mix(in srgb, var(--f-accent) 60%, #fff); }
+  &:nth-child(5n + 2):hover { color: $f-pink; }
+  &:nth-child(5n + 3):hover { color: $f-yellow; }
+  &:nth-child(5n + 4):hover { color: $f-green; }
+  &:nth-child(5n + 5):hover { color: #b9acf5; }
+}
+
+/* the round logo: the name around a solid dot */
+.footer-badge {
+  flex-shrink: 0;
+  width: clamp(64px, 7vw, 112px);
+  aspect-ratio: 1;
+  margin-bottom: 0.6cqi;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    transition: transform 1.2s $f-spring;
+  }
+
+  &:hover svg {
+    transform: rotate(180deg);
+  }
+
+  text {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: $f-text;
+  }
+
+  circle {
+    fill: $f-text;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-wordmark-char,
+  .footer--in .footer-wordmark-char {
+    transform: none;
+    transition: color 0.2s ease;
+  }
+  .footer-link::after,
+  .footer-top-circle svg,
+  .footer-music-record {
+    animation: none !important;
+  }
+  .footer-badge svg {
+    transition: none;
+  }
+}
+
+
+/* ============================================================
+   SMALLER LAPTOPS: the widgets move to their own row
+   ============================================================ */
+
+@media (max-width: 1600px) {
+  .footer-top {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'note cols'
+      'widgets widgets';
+    row-gap: 48px;
+  }
+
+  .footer-widgets {
+    justify-self: start;
+    justify-content: flex-start;
+  }
 }
 
 
@@ -544,26 +820,17 @@ button.footer-setting-row:focus-visible {
    ============================================================ */
 
 @include respond($bp-md) {
-  .footer {
-    padding: 0 24px;
+  .footer-top {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'note'
+      'cols'
+      'widgets';
   }
 
-  .footer-inner {
-    padding-top: 48px;
-  }
-
-  .footer-grid {
+  .footer-cols {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 32px;
-    padding-bottom: 48px;
-  }
-
-  .footer-wordmark {
-    padding: 24px 0 28px;
-  }
-
-  .footer-wordmark-text {
-    font-size: clamp(44px, 10vw, 96px);
+    justify-content: stretch;
   }
 }
 
@@ -573,20 +840,18 @@ button.footer-setting-row:focus-visible {
    ============================================================ */
 
 @include respond($bp-xs) {
-  .footer {
-    padding: 0 20px;
+  .footer-legal {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .footer-grid {
-    grid-template-columns: 1fr;
+  .footer-badge {
+    width: 52px;
   }
 
-  .footer-a11y-menu {
-    width: min(250px, calc(100vw - 40px));
-  }
-
-  .footer-wordmark-text {
-    font-size: clamp(40px, 15vw, 72px);
-    white-space: normal;
+  .footer-widgets,
+  .footer-control,
+  .footer-music {
+    width: 100%;
   }
 }

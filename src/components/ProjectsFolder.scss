@@ -21,36 +21,87 @@ $note-ink: #1f3a5c;
   margin-top: -100vh;
 }
 
-/* Two columns: title on the left, the Finder window on the right */
+/* The heading on top, the Finder window across the full width below it */
 .pf-layout {
-  width: min(1760px, 100%);
-  display: grid;
-  grid-template-columns: minmax(0, 0.62fr) minmax(0, 1.38fr);
-  gap: clamp(40px, 5vw, 96px);
-  align-items: center;
+  width: min(1480px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(40px, 5vh, 64px);
 }
 
-/* ── Left: title ── */
+/* ── Heading: the title on the left, the lead on the right ── */
 .pf-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  align-items: end;
+  gap: 24px 64px;
   will-change: opacity, transform;
 }
-// Same type settings as the heading in the Contact section
+// In the tall serif of the footer's wordmark, the second half in italic
 .pf-title {
-  margin: 0 0 24px;
-  font-family: var(--font-display);
+  margin: 0;
+  font-family: $font-serif-display;
   font-weight: 400;
-  font-size: calc(clamp(44px, 5.6vw, 88px) * var(--font-scale, 1));
-  line-height: 1;
+  font-size: calc(clamp(52px, 6.4vw, 112px) * var(--font-scale, 1));
+  line-height: 0.95;
   letter-spacing: -0.02em;
   color: var(--black);
+
+  em { font-style: italic; }
 }
 .pf-lead {
-  max-width: 440px;
-  margin: 0;
+  margin: 0 0 10px;
   font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.6;
   color: rgba(0, 0, 0, 0.55);
+}
+
+/* the filters, as chips with a count (in step with the Finder's sidebar) */
+.pf-chips {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 16px;
+  font-family: var(--font-body);
+  font-size: calc(14px * var(--font-scale, 1));
+  font-weight: 600;
+  color: theme.$ink;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  &:hover { transform: translateY(-2px); border-color: rgba(0, 0, 0, 0.2); }
+
+  &.is-active {
+    color: #fff;
+    background: theme.$ink;
+    border-color: theme.$ink;
+  }
+
+  &:focus-visible {
+    outline: 2px solid theme.$active;
+    outline-offset: 2px;
+  }
+}
+.pf-chip-count {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11.5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+
+  .is-active & { background: rgba(255, 255, 255, 0.2); }
 }
 
 /* ── Right: window + sticky note ── */
@@ -60,8 +111,9 @@ $note-ink: #1f3a5c;
 }
 .pf-sticky-note {
   position: absolute;
-  top: -30px;
-  right: -14px;
+  // bottom-right corner, clear of the traffic lights and of Quick Look
+  right: -34px;
+  bottom: -48px;
   z-index: 2;
   width: 180px;
   padding: 18px 16px 22px;
@@ -90,6 +142,7 @@ $note-ink: #1f3a5c;
 /* ── Finder window ── */
 .pf-finder {
   position: relative;
+  z-index: 1;
   width: 100%;
   min-height: clamp(520px, 56vh, 780px);
   background: #fff;
@@ -217,6 +270,12 @@ $note-ink: #1f3a5c;
 .pf-sidebar-item--active .pf-sidebar-dot {
   opacity: 1;
 }
+.pf-sidebar-count {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.55;
+}
+.pf-sidebar-item--active .pf-sidebar-count { opacity: 0.85; }
 
 .pf-grid-wrap {
   flex: 1;
@@ -225,8 +284,8 @@ $note-ink: #1f3a5c;
 }
 .pf-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-  gap: 40px 24px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 36px 16px;
 }
 
 /* ── Folder card (grid item) ── */
@@ -248,17 +307,76 @@ $note-ink: #1f3a5c;
   outline-offset: 2px;
 }
 
-.pf-svg {
-  width: 100%;
-  max-width: 120px;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.12));
-  transition: filter 0.25s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1);
+// the one shown in Quick Look gets a soft highlight, like a selected icon in Finder
+// (only where Quick Look is showing)
+@media (min-width: 1101px) {
+  .pf-card[data-previewing] {
+    background: color-mix(in srgb, var(--fc) 10%, transparent);
+  }
 }
-.pf-card:hover .pf-svg {
-  filter: drop-shadow(0 12px 18px rgba(0,0,0,0.18));
-  transform: translateY(-4px);
+
+/* The folder: its back, the mockup peeking out, and a front flap that tips open */
+.pf-folder {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 124px;
+  aspect-ratio: 240 / 200;
+  perspective: 520px;
+}
+.pf-folder-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: var(--fc-dark);
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.12));
+  transition: filter 0.3s ease;
+}
+.pf-folder-peek {
+  position: absolute;
+  left: 9%;
+  top: 24%;
+  width: 82%;
+  height: 58%;
+  object-fit: cover;
+  object-position: top center;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(14%);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pf-folder-front {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 72%;
+  border-radius: 7px;
+  background: linear-gradient(180deg, var(--fc-mid) 0 5%, var(--fc) 5% 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transform-origin: bottom center;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+}
+
+.pf-section--landed .pf-folder {
+  animation: pf-wiggle 0.7s ease-in-out calc(0.5s + var(--i, 0) * 0.12s) both;
+}
+
+@keyframes pf-wiggle {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-7deg) translateY(-4px); }
+  45% { transform: rotate(6deg) translateY(-2px); }
+  70% { transform: rotate(-3deg); }
+}
+
+.pf-card:hover,
+.pf-card:focus-visible {
+  .pf-folder-back { filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.18)); }
+  .pf-folder-peek { transform: translateY(-26%) rotate(-4deg); }
+  .pf-folder-front { transform: rotateX(-32deg); filter: brightness(1.06); }
 }
 
 .pf-card-name {
@@ -273,6 +391,111 @@ $note-ink: #1f3a5c;
   @include mono-label(9px, 0.1em);
   color: rgba(0,0,0,0.4);
   margin-top: -4px;
+}
+
+/* ── Quick Look: the folder you point at, in more detail ── */
+.pf-preview {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 24px;
+  background: color-mix(in srgb, var(--fc) 7%, #fbfbfb);
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  transition: background 0.4s ease;
+}
+.pf-preview-media {
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.25s ease-out;
+  background: color-mix(in srgb, var(--fc) 18%, #fff);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    animation: pf-preview-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+.pf-preview-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: pf-preview-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+}
+@keyframes pf-preview-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+}
+.pf-preview-meta {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  @include mono-label(10.5px, 0.1em);
+  color: rgba(0, 0, 0, 0.5);
+}
+.pf-preview-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: calc(26px * var(--font-scale, 1));
+  line-height: 1.1;
+  color: theme.$ink;
+}
+.pf-preview-tagline {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: calc(14.5px * var(--font-scale, 1));
+  line-height: 1.55;
+  color: rgba(0, 0, 0, 0.62);
+}
+.pf-preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    padding: 4px 10px;
+    font-family: var(--font-body);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--fc) 70%, #000);
+    background: color-mix(in srgb, var(--fc) 12%, #fff);
+    border-radius: 999px;
+  }
+}
+.pf-preview-open {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 11px 20px;
+  font-family: var(--font-body);
+  font-size: calc(14px * var(--font-scale, 1));
+  font-weight: 600;
+  color: #fff;
+  background: var(--fc);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.2s ease;
+
+  span { transition: transform 0.25s ease; }
+  &:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  &:hover span { transform: translateX(4px); }
+
+  &:focus-visible {
+    outline: 2px solid var(--fc);
+    outline-offset: 3px;
+  }
 }
 
 /* Status bar, like Finder */
@@ -299,20 +522,23 @@ $note-ink: #1f3a5c;
   transition: clip-path 0.9s cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* ── Smaller laptops: no room for Quick Look ── */
+@media (max-width: 1100px) {
+  .pf-preview { display: none; }
+}
+
 /* ── Tablet: stack the title above the window ── */
 @include respond($bp-md) {
-  .pf-layout {
-    grid-template-columns: 1fr;
-    gap: 48px;
-  }
-  .pf-lead { max-width: 520px; }
+  .pf-intro { grid-template-columns: 1fr; }
+  .pf-lead { max-width: 520px; margin: 0; }
 }
 
 /* ── Mobile ── */
 @include respond($bp-sm) {
-  .pf-section { padding: 8vh 5vw; margin-top: 0; }
+  .pf-section { padding: 8vh 5vw; }
   .pf-sticky-note { display: none; }
   .pf-sidebar { display: none; }
+  .pf-chips { display: flex; }
   .pf-nav-btns { display: none; }
   .pf-titlebar-title { margin-right: 52px; }
   .pf-finder { min-height: 360px; }
@@ -321,5 +547,10 @@ $note-ink: #1f3a5c;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pf-card:hover .pf-svg { transform: none; }
+  .pf-section--landed .pf-folder { animation: none; }
+  .pf-preview-media { transform: none; }
+  .pf-folder-peek,
+  .pf-folder-front { transition: none; }
+  .pf-preview-media img,
+  .pf-preview-info { animation: none; }
 }

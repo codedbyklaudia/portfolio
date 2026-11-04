@@ -2,19 +2,23 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import './Nav.scss';
 
+const CLOCK_LOCALES = { en: 'en-GB', pl: 'pl-PL', it: 'it-IT', de: 'de-DE', ja: 'ja-JP' };
+
 function MenubarClock() {
+const { lang } = useLanguage();
+const locale = CLOCK_LOCALES[lang] || 'en-GB';
 const [time, setTime] = useState('');
 const [date, setDate] = useState('');
 useEffect(() => {
 const update = () => {
 const now = new Date();
-setTime(now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-setDate(now.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }));
+setTime(now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }));
+setDate(now.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' }));
     };
 update();
 const t = setInterval(update, 10000);
 return () => clearInterval(t);
-  }, []);
+  }, [locale]);
 return <span className="nb-clock">{date} {time}</span>;
 }
 

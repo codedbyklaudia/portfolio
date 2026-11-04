@@ -47,32 +47,47 @@ function ScrollRevealText({ text, className = '' }) {
   );
 }
 
-function TiltPhoto({ children }) {
-  const ref = useRef(null);
+// The little card beside the text in each note: the facts at a glance, or what I do
+// off the clock. (English for now; add translation keys to translate them.)
+const GLANCE = [
+  ['📍', 'about.glance.based', 'Based in London'],
+  ['🇵🇱', 'about.glance.from', 'Originally from Bydgoszcz, Poland'],
+  ['🎓', 'about.glance.degree', 'BSc Web Development, First Class'],
+  ['💼', 'about.glance.studio', 'Freelancing as CodedByKlaudia'],
+  ['🛠️', 'about.glance.build', 'Websites, web apps & Android apps'],
+];
+const OFF_CLOCK = [
+  ['🐾', 'about.offClock.nox', 'Long walks with Nox'],
+  ['🍵', 'about.offClock.matcha', 'Iced blueberry matcha, always'],
+  ['🧘', 'about.offClock.yoga', 'Yoga & CrossFit'],
+  ['🎬', 'about.offClock.cinema', 'Cinema nights (extra nachos)'],
+  ['🪄', 'about.offClock.magic', 'Anything Harry Potter'],
+];
 
-  const handleMove = e => {
-    // Skip the tilt for visitors whose device is set to reduce motion
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const el = ref.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width - 0.5;
-    const py = (e.clientY - rect.top) / rect.height - 0.5;
-    el.style.setProperty('--tilt-x', `${py * -6}deg`);
-    el.style.setProperty('--tilt-y', `${px * 6}deg`);
+function SideCard({ title, items, status }) {
+  const { t } = useLanguage();
+  const tr = (key, fallback) => {
+    const v = t(key);
+    return !v || v === key ? fallback : v;
   };
-
-  const handleLeave = () => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.setProperty('--tilt-x', '0deg');
-    el.style.setProperty('--tilt-y', '0deg');
-  };
-
   return (
-    <div className="about-photo" ref={ref} onMouseMove={handleMove} onMouseLeave={handleLeave}>
-      {children}
-    </div>
+    <aside className="about-side-card">
+      <p className="about-side-title">{title}</p>
+      <ul className="about-side-list">
+        {items.map(([icon, key, text]) => (
+          <li key={key}>
+            <span className="about-side-icon" aria-hidden="true">{icon}</span>
+            {tr(key, text)}
+          </li>
+        ))}
+      </ul>
+      {status && (
+        <p className="about-side-status">
+          <span className="about-side-dot" aria-hidden="true" />
+          {status}
+        </p>
+      )}
+    </aside>
   );
 }
 
@@ -80,6 +95,10 @@ const NOTE_IDS = ['story', 'life', 'facts'];
 
 export default function About() {
   const { t } = useLanguage();
+  const tr = (key, fallback) => {
+    const v = t(key);
+    return !v || v === key ? fallback : v;
+  };
   const [activeNote, setActiveNote] = useState(() => {
     if (typeof window !== 'undefined') {
       const preset = sessionStorage.getItem('cbk-about-tab');
@@ -98,6 +117,10 @@ export default function About() {
     <section id="about" className="about-section">
 
       <div className="about-intro">
+        <p className="about-kicker">
+          <span className="about-kicker-star" aria-hidden="true">✳</span>
+          {tr('about.kicker', "Hello, I'm Klaudia")}
+        </p>
         <ScrollRevealText text={t('about.intro')} />
       </div>
 
@@ -138,22 +161,11 @@ export default function About() {
 
               {activeNote === 'story' && (
                 <div className="about-story" key="story">
-                  <div className="about-block about-block--img-left">
-                    <Reveal className="about-block-img">
-                      <TiltPhoto>
-                        <div className="about-img-wrap is-bottom">
-                          <img src="/images/about-1.jpg" alt="Klaudia"
-                            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
-                          />
-                          <div className="about-img-placeholder" style={{display:'none'}}>
-                            <img src="/images/me_harry.jpeg" alt="Klaudia" />
-                          </div>
-                        </div>
-                        <span className="about-img-tag">{t('about.story.imgTag')}</span>
-                      </TiltPhoto>
-                    </Reveal>
+                  <Reveal>
+                    <h3 className="about-block-title about-block-title--center">{t('about.story.title')}</h3>
+                  </Reveal>
+                  <div className="about-block about-block--text-only">
                     <Reveal delay={120} className="about-block-text">
-                      <h3 className="about-block-title">{t('about.story.title')}</h3>
                       <p className="about-block-body">{t('about.story.body1')}</p>
                       <p className="about-block-body">{t('about.story.body2')}</p>
                       <div className="about-cta-row">
@@ -171,6 +183,9 @@ export default function About() {
                         </a>
                       </div>
                     </Reveal>
+                    <Reveal delay={220}>
+                      <SideCard title={tr('about.glance.title', 'At a glance')} items={GLANCE} status={tr('about.glance.status', 'Available for new projects')} />
+                    </Reveal>
                   </div>
                 </div>
               )}
@@ -178,24 +193,16 @@ export default function About() {
 
               {activeNote === 'life' && (
                 <div className="about-story" key="life">
-                  <div className="about-block about-block--img-right">
+                  <Reveal>
+                    <h3 className="about-block-title about-block-title--center">{t('about.life.title')}</h3>
+                  </Reveal>
+                  <div className="about-block about-block--text-only">
                     <Reveal delay={120} className="about-block-text">
-                      <h3 className="about-block-title">{t('about.life.title')}</h3>
                       <p className="about-block-body">{t('about.life.body1')}</p>
                       <p className="about-block-body">{t('about.life.body2')}</p>
                     </Reveal>
-                    <Reveal className="about-block-img">
-                      <TiltPhoto>
-                        <div className="about-img-wrap">
-                          <img src="/images/about-3.jpg" alt="Nox"
-                            onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
-                          />
-                          <div className="about-img-placeholder" style={{display:'none'}}>
-                            <img src="/images/me_and_nox.jpeg" alt="Nox" />
-                          </div>
-                        </div>
-                        <span className="about-img-tag">{t('about.life.imgTag')}</span>
-                      </TiltPhoto>
+                    <Reveal delay={220}>
+                      <SideCard title={tr('about.offClock.title', 'Off the clock')} items={OFF_CLOCK} />
                     </Reveal>
                   </div>
                 </div>
@@ -204,18 +211,20 @@ export default function About() {
               {activeNote === 'facts' && (
                 <div className="about-notes-page" key="facts">
                   <Reveal>
-                    <h3 className="about-block-title">{t('about.facts.title')}</h3>
-                    <p className="about-block-body" style={{ marginBottom: 32 }}>
+                    <h3 className="about-block-title about-block-title--center">{t('about.facts.title')}</h3>
+                    <p className="about-block-body" style={{ marginBottom: 32, textAlign: 'center' }}>
                       {t('about.facts.subtitle')}
                     </p>
                   </Reveal>
 
                   <Reveal delay={100}>
                     <ul className="an-fact-list">
-                      <li>{t('about.facts.item1')}</li>
-                      <li>{t('about.facts.item2')}</li>
-                      <li>{t('about.facts.item3')}</li>
-                      <li>{t('about.facts.item4')}</li>
+                      {[1, 2, 3, 4].map(n => (
+                        <li key={n} className="an-fact">
+                          <span className="an-fact-num" aria-hidden="true">0{n}</span>
+                          {t(`about.facts.item${n}`)}
+                        </li>
+                      ))}
                     </ul>
                   </Reveal>
                 </div>

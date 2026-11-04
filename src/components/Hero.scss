@@ -831,72 +831,6 @@ $lh-steel: #8f9aae;
   color: rgba(0,0,0,0.6);
 }
 
-.lh-lang-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.lh-lang-wave {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -20vh;
-  height: 140vh;
-  border-radius: 50% 50% 0 0 / 120px 120px 0 0;
-  transform: translateY(100%);
-  animation-name: lhLangWipe;
-  animation-duration: 3.2s;
-  animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1);
-  animation-fill-mode: forwards;
-}
-
-.lh-lang-wave--1 {
-  background: linear-gradient(135deg, #A8C3A0 0%, #6F9468 100%);
-  animation-delay: 0s;
-}
-.lh-lang-wave--2 {
-  background: linear-gradient(135deg, #C9B8D4 0%, #8F76A8 100%);
-  animation-delay: 0.24s;
-}
-.lh-lang-wave--3 {
-  background: linear-gradient(135deg, #E3C9A0 0%, #A67F52 100%);
-  animation-delay: 0.48s;
-}
-
-@keyframes lhLangWipe {
-  0%   { transform: translateY(100%); }
-  42%  { transform: translateY(0%); }
-  58%  { transform: translateY(0%); }
-  100% { transform: translateY(-100%); }
-}
-
-.lh-lang-overlay-text {
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-decor-alt);
-  font-style: italic;
-  font-weight: 700;
-  font-size: clamp(36px, 6vw, 72px);
-  color: #fff;
-  opacity: 0;
-  animation-name: lhLangTextFade;
-  animation-duration: 3.2s;
-  animation-timing-function: ease;
-  animation-delay: 0.48s;
-  animation-fill-mode: both;
-}
-@keyframes lhLangTextFade {
-  0%, 48%   { opacity: 0; transform: translateY(10px); }
-  52%, 57%  { opacity: 1; transform: translateY(0); }
-  61%, 100% { opacity: 0; transform: translateY(-10px); }
-}
-
 .lh-reveal-quote {
   margin: 0;
   max-width: 520px;
@@ -1155,4 +1089,219 @@ a.lh-reveal-folder-btn {
   height: 20px;
   background: rgba(255,255,255,0.28);
   margin: 0 2px;
+}
+
+// ── The desktop, like Elena's: widgets top-left, who I am bottom-right ──
+.lh-reveal-topleft {
+  top: 88px;
+  left: clamp(24px, 3vw, 48px);
+}
+.lh-widget-grid {
+  --cell: clamp(132px, 10.6vw, 168px);
+  grid-template-columns: repeat(4, var(--cell));
+  grid-auto-rows: auto;
+  gap: 18px;
+  align-items: start;
+}
+.lh-widget-card {
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 34px rgba(20, 20, 30, 0.07);
+}
+
+// clock: a clean analog face with the city on it and a red second hand
+.lh-wg-clock {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 10px;
+  justify-content: center;
+  svg { width: 100%; height: 100%; }
+}
+.lh-wg-tick { stroke: rgba(0, 0, 0, 0.18); stroke-width: 0.8; stroke-linecap: round; }
+.lh-wg-tick--hour { stroke: rgba(0, 0, 0, 0.45); stroke-width: 1.4; }
+.lh-wg-city { font-family: var(--font-body); font-size: 7px; font-weight: 600; letter-spacing: 0.08em; fill: rgba(0, 0, 0, 0.45); }
+.lh-wg-hand { stroke: #1a1a1a; stroke-linecap: round; }
+.lh-wg-hand--sec { stroke: #e2533b; }
+.lh-wg-pivot { fill: #e2533b; }
+
+// calendar: the day in red, the date big, the month as a little grid
+.lh-wg-cal {
+  width: var(--cell);
+  height: var(--cell);
+  padding: 14px 14px 12px;
+  align-items: stretch;
+  font-family: var(--font-body);
+}
+.lh-wg-cal-day { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #e2533b; }
+.lh-wg-cal-date { margin: 1px 0 6px; font-size: 28px; font-weight: 600; line-height: 1; color: #1a1a1a; }
+.lh-wg-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 1px;
+  font-size: 8.5px;
+  text-align: center;
+  color: #3a3a3a;
+  span { display: grid; place-items: center; height: 13px; }
+  .lh-wg-cal-head { color: rgba(0, 0, 0, 0.4); font-weight: 600; }
+  .is-today { border-radius: 50%; background: #1a1a1a; color: #fff; font-weight: 700; aspect-ratio: 1; height: 13px; margin: 0 auto; }
+}
+
+// music: artwork, title, controls; progress and time underneath
+.lh-wg-music {
+  grid-column: span 2;
+  height: var(--cell);
+  padding: 18px 20px 14px;
+  align-items: stretch;
+  justify-content: space-between;
+  font-family: var(--font-body);
+}
+.lh-wg-music-top { display: flex; gap: 16px; align-items: center; }
+.lh-wg-music-art {
+  position: relative;
+  flex: none;
+  width: calc(var(--cell) * 0.5);
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(140deg, #f08a6b 0%, #e2533b 55%, #b7405e 100%);
+  box-shadow: 0 8px 18px rgba(226, 83, 59, 0.28);
+}
+.lh-wg-music-record {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, #241f24 0 2px, #34303a 2px 3px);
+  &::after { content: ''; position: absolute; inset: 36%; border-radius: 50%; background: #f6d7c9; }
+  animation: lhSpin 3.2s linear infinite;
+  animation-play-state: paused;
+}
+.is-playing .lh-wg-music-record { animation-play-state: running; }
+@keyframes lhSpin { to { transform: rotate(360deg); } }
+.lh-wg-music-info { min-width: 0; }
+.lh-wg-music-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.lh-wg-music-artist { margin-top: 2px; font-size: 12px; color: rgba(0, 0, 0, 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lh-wg-music-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  button {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    svg { width: 13px; height: 13px; fill: #1a1a1a; }
+    &:hover { background: rgba(0, 0, 0, 0.06); }
+    &:focus-visible { outline: 2px solid #4a7fb5; outline-offset: 2px; }
+  }
+  .lh-wg-music-play svg { width: 16px; height: 16px; }
+}
+.lh-wg-music-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  span { display: block; height: 100%; background: rgba(0, 0, 0, 0.55); transition: width 0.25s linear; }
+}
+.lh-wg-music-times { display: flex; justify-content: space-between; margin-top: -6px; font-size: 10px; font-variant-numeric: tabular-nums; color: rgba(0, 0, 0, 0.42); }
+
+// weather: a week in London
+.lh-wg-weather {
+  grid-column: 1 / span 2;
+  padding: 16px 20px 18px;
+  align-items: stretch;
+  font-family: var(--font-body);
+}
+.lh-wg-weather-city { font-size: 13px; font-weight: 600; color: #3a3a3a; }
+.lh-wg-weather-days {
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  li { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+}
+.lh-wg-weather-name { font-size: 10px; color: rgba(0, 0, 0, 0.45); }
+.lh-wg-weather-temp { font-size: 11px; font-weight: 600; color: #3a3a3a; }
+.lh-wg-wx { width: 18px; height: 18px; fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.lh-wg-wx--sun { stroke: #f5b82e; circle { fill: #f5b82e; } }
+.lh-wg-wx--cloud, .lh-wg-wx--rain, .lh-wg-wx--snow, .lh-wg-wx--storm { > path:first-child { fill: #b9bec7; stroke: none; } }
+.lh-wg-wx-drops { stroke: #5b9ee0; stroke-width: 1.6; }
+.lh-wg-wx-bolt { stroke: #f5b82e; stroke-width: 1.4; }
+
+// one photo
+.lh-wg-photo {
+  grid-column: 1;
+  width: var(--cell);
+  height: var(--cell);
+  padding: 0;
+  overflow: hidden;
+  img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; user-select: none; }
+}
+
+// who I am, bottom-right
+.lh-reveal-intro {
+  position: absolute;
+  right: clamp(24px, 4vw, 72px);
+  bottom: clamp(96px, 14vh, 150px);
+  max-width: min(60vw, 960px);
+  text-align: center;
+  pointer-events: none;
+}
+// in the tall serif of the footer's wordmark
+.lh-intro-title {
+  margin: 0;
+  font-family: $font-serif-display;
+  font-size: clamp(48px, 5.6vw, 104px);
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  color: #111;
+  > span { display: block; }
+  @media (min-width: 1024px) { > span { white-space: nowrap; } }
+}
+.lh-intro-underline { font-style: italic; }
+.lh-intro-text {
+  max-width: 44ch;
+  margin: 22px auto 0;
+  font-family: var(--font-body);
+  font-size: clamp(15px, 1.25vw, 19px);
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+// the languages, in the bottom-right corner
+.lh-lang-switcher--corner {
+  position: absolute;
+  right: clamp(16px, 2vw, 28px);
+  bottom: 22px;
+  pointer-events: auto;
+}
+
+// the folders sit top-right, out of the headline's way
+.lh-reveal-folders {
+  top: 88px;
+  right: clamp(24px, 3vw, 48px);
+  transform: none;
+  gap: 28px;
+}
+.lh-reveal-col { gap: 18px; }
+
+// laptops: a little less room, so the widgets tighten up
+@media (max-width: 1280px) {
+  .lh-reveal-intro { max-width: 58vw; }
+  .lh-reveal-folders { gap: 18px; }
+}
+
+@include respond($bp-sm) {
+  .lh-reveal-scene { flex-direction: column; gap: 28px; }
+  .lh-reveal-intro { position: static; max-width: none; order: -1; }
+  .lh-intro-title { font-size: clamp(44px, 12vw, 64px); }
+  .lh-lang-switcher--corner { position: static; margin: 0 auto; }
 }
