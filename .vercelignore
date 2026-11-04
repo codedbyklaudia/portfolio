@@ -1,0 +1,3 @@
+# The contact mail server runs on Render (see render.yaml), not on Vercel
+server/
+render.yaml
